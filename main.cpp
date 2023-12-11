@@ -15,13 +15,12 @@ int main()
 {
 	B15F &drv = B15F::getInstance();
     cout << endl
-         << "-------[V-1.2]-------" << endl
-         << endl;
+         << "-------[V-1.2]-------" << endl;
 
     while (1)
     {
         int decision;
-        cout << "Was möchten Sie tun?\n[0] Empfangen\n[1] Senden" << endl;
+        cout << endl << "Was möchten Sie tun?\n[0] Empfangen\n[1] Senden" << endl;
         cin >> decision;
 
         if ((!cin.fail()) && (decision < 2 && decision > -1))
