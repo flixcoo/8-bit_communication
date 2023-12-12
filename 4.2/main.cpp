@@ -14,18 +14,19 @@ char binToChar(const std::string &);
 int main()
 {
 	B15F &drv = B15F::getInstance();
+    bool running = true;
     cout << endl
-         << "-------[V-1.2]-------" << endl;
+         << "-------[Zeichenkette senden]-------" << endl;
 
-    while (1)
+    while (running)
     {
         int decision;
-        cout << endl << "Was möchten Sie tun?\n[0] Empfangen\n[1] Senden" << endl;
+        cout << endl << "Was möchten Sie tun?\n[0] Empfangen\n[1] Senden\n[2] Beenden" << endl;
         cin >> decision;
 
-        if ((!cin.fail()) && (decision < 2 && decision > -1))
+        if ((!cin.fail()) && (decision < 3 && decision > -1))
         {
-            if (decision)
+            if (decision == 1)
             {
                 cout << "Bitte geben Sie einen Buchstaben zum Senden ein:" << endl;
                 char c;
@@ -33,15 +34,20 @@ int main()
                 sendEscape(drv);
                 sendChar(c, drv);
             }
-            else
+            if(!decision)
             {
                 revieceChar(drv);
+            }
+            else
+            {
+               running = false; 
             }
         }
         // skipping wrong inputs
         cin.clear();
         cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     }
+    cout << "Das Programm wurde beendet" << endl;
 }
 
 void sendEscape(B15F &drv)
