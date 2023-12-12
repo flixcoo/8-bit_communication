@@ -47,14 +47,15 @@ int main()
 
 void sendEscape(B15F &drv)
 {
-    // ESC: 101-010-101
+    
     drv.setRegister(&DDRA, 0x07);
     cout << "[System]: ESC wird gesendet..." << endl;
-    drv.setRegister(&PORTA, 0b101); // 5
+    // ESC: 101-010-101 or 5-2-5
+    drv.setRegister(&PORTA, 0b101);
     drv.delay_ms(500);
-    drv.setRegister(&PORTA, 0b010); // 2
+    drv.setRegister(&PORTA, 0b010);
     drv.delay_ms(500);
-    drv.setRegister(&PORTA, 0b101); // 5
+    drv.setRegister(&PORTA, 0b101);
     cout << "[System]: ESC gesendet" << endl;
     drv.delay_ms(500);
 }
@@ -87,7 +88,6 @@ void revieceChar(B15F &drv)
     drv.setRegister(&DDRA, 0x00);
     // checking if escape was send
     bool active = false;
-
     while (!active)
     {
         active = checkEscape(drv);
