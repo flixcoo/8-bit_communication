@@ -15,34 +15,38 @@ int main()
     B15F &drv = B15F::getInstance();
 
     cout << endl
-         << "-------[V-1.4]-------" << endl;
-
-    while (1)
+         << "-------[V-1.5]-------" << endl;
+    bool running = true;
+    while (running)
     {
         int decision;
         cout << endl
-             << "Was möchten Sie tun?\n[0] Empfangen\n[1] Senden" << endl;
+             << "Was möchten Sie tun?\n[0] Empfangen\n[1] Senden\n[2] Exit" << endl;
         cin >> decision;
 
-        if ((!cin.fail()) && (decision < 2 && decision > -1))
+        if ((!cin.fail()) && (decision < 3 && decision > -1))
         {
+            if(!decision)
+                revieceChar(drv);
             if (decision)
             {
-                cout << "Bitte geben Sie einen Buchstaben zum Senden ein:" << endl;
-                char c;
-                cin >> c;
-                sendEscape(drv);
-                sendChar(c, drv);
-            }
-            else
-            {
-                revieceChar(drv);
+                if(decision == 2)
+                    running = false;
+                else
+                {
+                    cout << "Bitte geben Sie einen Buchstaben zum Senden ein:" << endl;
+                    char c;
+                    cin >> c;
+                    sendEscape(drv);
+                    sendChar(c, drv);
+                }
             }
         }
         // skipping wrong inputs
         cin.clear();
         cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     }
+    cout << endl << "[System]: Programm beendet" << endl << endl;
 }
 
 void sendEscape(B15F &drv)
