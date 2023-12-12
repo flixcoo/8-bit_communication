@@ -34,7 +34,7 @@ int main()
                     running = false;
                 else
                 {
-                    cout << "Bitte geben Sie einen Buchstaben zum Senden ein:" << endl;
+                    cout << "Bitte geben Sie einen Zeichen zum Senden ein:" << endl;
                     char c;
                     cin >> c;
                     sendEscape(drv);
