@@ -74,6 +74,9 @@ void revieceChar(B15F &drv)
 	}
 
 	int amount = (int)drv.getRegister(&PINA);
+	// ToDo
+	// Amount war beim Empfaenger-PC 5 statt 4
+
 	drv.delay_ms(500);
 	if(debug){cout << "amount: " << amount << endl;}
 
