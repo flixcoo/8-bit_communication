@@ -121,9 +121,8 @@ void sendChar(char c, B15F &drv)
 
     for (long unsigned int i = 0; i < binary.length(); i += 3)
     {
-        cout << "substring: " << binary.substr(i, 3) << endl; // Debug
-        int bin = stoi(binary.substr(i, 3));
-        drv.setRegister(&PORTA, bin);
+        cout << "substring " << i << ": " << binary.substr(i, 3) << endl; // Debug
+        drv.setRegister(&PORTA, stoi(binary.substr(i, 3)));
         drv.delay_ms(500);
     }
 }
