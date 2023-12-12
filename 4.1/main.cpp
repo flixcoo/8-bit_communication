@@ -4,23 +4,24 @@
 
 using namespace std;
 
+void sendEscape(B15F &);
+bool checkEscape(B15F &);
 void revieceChar(B15F &);
 void sendChar(char, B15F &);
-void sendEscape(B15F &);
-string setStringtoASCII(string);
-int binaryToDecimal(string);
-char binToChar(const std::string &);
+char binToChar(const string &);
 
 int main()
 {
-	B15F &drv = B15F::getInstance();
+    B15F &drv = B15F::getInstance();
+
     cout << endl
-         << "-------[V-1.2]-------" << endl;
+         << "-------[V-1.4]-------" << endl;
 
     while (1)
     {
         int decision;
-        cout << endl << "Was möchten Sie tun?\n[0] Empfangen\n[1] Senden" << endl;
+        cout << endl
+             << "Was möchten Sie tun?\n[0] Empfangen\n[1] Senden" << endl;
         cin >> decision;
 
         if ((!cin.fail()) && (decision < 2 && decision > -1))
@@ -58,44 +59,39 @@ void sendEscape(B15F &drv)
     drv.delay_ms(500);
 }
 
+bool checkEscape(B15F &drv)
+{
+    drv.delay_ms(500);
+    int input = (int)drv.getRegister(&PINA);
+    if (input == 5)
+    {
+        drv.delay_ms(500);
+        input = (int)drv.getRegister(&PINA);
+        if (input == 2)
+        {
+            drv.delay_ms(500);
+            input = (int)drv.getRegister(&PINA);
+            if (input == 5)
+            {
+                cout << "[System]: ESC empfangen" << endl;
+                return true;
+            }
+        }
+    }
+    cout << "[System]: Kein ESC bekommen" << endl;
+    return false;
+}
+
 void revieceChar(B15F &drv)
 {
     drv.setRegister(&DDRA, 0x00);
     // checking if escape was send
     bool active = false;
-    int input;
 
     while (!active)
     {
-
-        drv.delay_ms(500);
-        input = (int)drv.getRegister(&PINA);
-        // cout << "[System]: " << input << "empfangen" << endl;
-        if (input == 5)
-        {
-            // cout << "[Debug]: input 5" << endl;
-            drv.delay_ms(500);
-            input = (int)drv.getRegister(&PINA);
-            if (input == 2)
-            {
-                // cout << "[Debug]: input 2" << endl;
-                drv.delay_ms(500);
-                input = (int)drv.getRegister(&PINA);
-                if (input == 5)
-                {
-                    // cout << "[Debug]: input 5 erneut" << endl;
-                    active = true;
-                }
-                else
-                    cout << "[System]: Kein ESC bekommen" << endl;
-            }
-            else
-                cout << "[System]: Kein ESC bekommen" << endl;
-        }
-        else
-            cout << "[System]: Kein ESC bekommen" << endl;
+        active = checkEscape(drv);
     }
-    cout << "[System]: ESC empfangen" << endl;
 
     vector<int> binary;
     for (int i = 0; i < 3; i++)
@@ -140,49 +136,3 @@ char binToChar(const std::string &in)
     }
     return temp;
 }
-
-//unused
-/*string setStringtoASCII(string str)
-{
-    int size = int(str.size());
-
-    // If given string is not a valid string
-    if (size % 8 != 0)
-    {
-        return "Not Possible!";
-    }
-
-    // To store final answer
-    string asciiStr = "";
-
-    // Loop to iterate through string
-    for (int i = 0; i < size; i += 8)
-    {
-        int decimal_value = binaryToDecimal((str.substr(i, 8)));
-
-        // Apprend the ASCII character equivalent to current value
-        asciiStr += char(decimal_value);
-    }
-    return asciiStr;
-}
-
-int binaryToDecimal(string binary)
-{
-    // Stores the decimal value
-    int dec_value = 0;
-    // Initializing base value to 1
-    int base = 1;
-
-    int len = binary.length();
-    for (int i = len - 1; i >= 0; i--)
-    {
-
-        // If the current bit is 1
-        if (binary[i] == '1')
-            dec_value += base;
-        base = base * 2;
-    }
-    // Return answer
-    return dec_value;
-}*/
-
