@@ -121,7 +121,6 @@ void sendChar(char c, B15F &drv)
 
     for (long unsigned int i = 0; i < binary.length(); i += 3)
     {
-        cout << "substring " << i << ": " << binary.substr(i, 3) << endl; // Debug
         drv.setRegister(&PORTA, stoi(binary.substr(i, 3)));
         drv.delay_ms(500);
     }
@@ -129,13 +128,13 @@ void sendChar(char c, B15F &drv)
 
 char binToChar(const std::string &in)
 {
-    char temp = 0;
+    char c = 0;
     for (int i = 0; i < 9; i++)
     {
         if ('1' == in.at(i))
         {
-            temp += (int)pow(2, 8 - i);
+            c += (int)pow(2, 8 - i);
         }
     }
-    return temp;
+    return c;
 }
