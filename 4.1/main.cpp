@@ -112,7 +112,7 @@ void revieceChar(B15F &drv)
     cout << "[System]: " << binToChar(s) << " (ASCII-Umwandlung)" << endl;
 }
 
-void sendChar(char c, B15F &drv)
+void sendChar(const char c, B15F &drv)
 {
     drv.setRegister(&DDRA, 0x07);
     string binary = bitset<9>((int)c).to_string();
