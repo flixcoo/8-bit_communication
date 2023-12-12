@@ -96,12 +96,12 @@ void revieceChar(B15F &drv)
 	}
 }
 
-char binToChar(const std::string &in)
+char binToChar(const std::string s)
 {
 	char c = 0;
 	for (int i = 0; i < 9; i++)
 	{
-		if ('1' == in.at(i))
+		if ('1' == s.at(i))
 		{
 			c += (int)pow(2, 8 - i);
 		}
