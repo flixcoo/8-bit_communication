@@ -4,7 +4,7 @@
 
 using namespace std;
 
-vector<char> dissectString(const string&);
+vector<char> dissectString(const string &);
 void sendChar(const char, B15F &);
 void revieceChar(B15F &);
 char binToChar(const string);
@@ -16,7 +16,7 @@ bool debug = true;
 int main()
 {
 	B15F &drv = B15F::getInstance();
-	
+
 	string sentence;
 	vector<char> charVector;
 
@@ -33,8 +33,11 @@ int main()
 			charVector = dissectString(sentence);
 			sendEscape(drv);
 			int size = charVector.size();
-			if(debug){cout << "size: " << size << endl;} //Debug
-			sendChar(size, drv); //Groesse rueberschicken
+			if (debug)
+			{
+				cout << "size: " << size << endl;
+			}					 // Debug
+			sendChar(size, drv); // Groesse rueberschicken
 			for (char c : charVector)
 				sendChar(c, drv);
 		}
@@ -43,7 +46,7 @@ int main()
 		cout << "[System]: Error" << endl;
 }
 
-vector<char> dissectString(const string& sentence)
+vector<char> dissectString(const string &sentence)
 {
 	vector<char> vector;
 	if (sentence.empty())
@@ -51,8 +54,11 @@ vector<char> dissectString(const string& sentence)
 		cout << "Falsche Eingabe" << endl;
 	}
 	vector.assign(sentence.begin(), sentence.end());
-	
-	if(debug){cout << "size-dissectString: " << vector.size() << endl;} //debug
+
+	if (debug)
+	{
+		cout << "size-dissectString: " << vector.size() << endl;
+	} // debug
 	return vector;
 }
 
@@ -74,17 +80,23 @@ void revieceChar(B15F &drv)
 {
 	drv.setRegister(&DDRA, 0x00);
 	bool active = false;
-	
+
 	while (!active)
-	{	
+	{
 		active = checkEscape(drv);
-		if(debug){cout << "active " << active << endl;} //debug
+		if (debug)
+		{
+			cout << "active " << active << endl;
+		} // debug
 	}
-	
-	drv.delay_ms(500);	
+
+	drv.delay_ms(500);
 	int amount = (int)drv.getRegister(&PINA);
-	
-	if(debug){cout << "amount: " << amount << endl;} //debug
+
+	if (debug)
+	{
+		cout << "amount: " << amount << endl;
+	} // debug
 
 	vector<int> binary;
 	for (int i = 0; i < amount; i++)
@@ -92,7 +104,10 @@ void revieceChar(B15F &drv)
 		for (int i = 0; i < 3; i++)
 		{
 			drv.delay_ms(500);
-			if(debug){cout << "Register: " << (int)drv.getRegister(&PINA) << endl;} //debug
+			if (debug)
+			{
+				cout << "Register: " << (int)drv.getRegister(&PINA) << endl;
+			} // debug
 			binary.push_back((int)drv.getRegister(&PINA));
 		}
 
@@ -123,7 +138,7 @@ bool checkEscape(B15F &drv)
 	drv.delay_ms(250);
 	int input = (int)drv.getRegister(&PINA);
 	if (input == 5)
-	{	
+	{
 		drv.delay_ms(500);
 		input = (int)drv.getRegister(&PINA);
 		if (input == 2)
@@ -144,14 +159,14 @@ bool checkEscape(B15F &drv)
 
 void sendEscape(B15F &drv)
 {
-    drv.setRegister(&DDRA, 0x07);
-    cout << "[System]: ESC wird gesendet..." << endl;
-    // ESC: 101-010-101 or 5-2-5
-    drv.setRegister(&PORTA, 0b101);
-    drv.delay_ms(500);
-    drv.setRegister(&PORTA, 0b010);
-    drv.delay_ms(500);
-    drv.setRegister(&PORTA, 0b101);
-    cout << "[System]: ESC gesendet" << endl;
-    drv.delay_ms(500);
+	drv.setRegister(&DDRA, 0x07);
+	cout << "[System]: ESC wird gesendet..." << endl;
+	// ESC: 101-010-101 or 5-2-5
+	drv.setRegister(&PORTA, 0b101);
+	drv.delay_ms(500);
+	drv.setRegister(&PORTA, 0b010);
+	drv.delay_ms(500);
+	drv.setRegister(&PORTA, 0b101);
+	cout << "[System]: ESC gesendet" << endl;
+	drv.delay_ms(500);
 }
