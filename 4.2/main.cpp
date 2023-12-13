@@ -24,7 +24,7 @@ int main()
 	{
 		if (sentence == "")
 		{
-			cout << "[System]: Empf„nger" << endl;
+			cout << "[System]: Recipient" << endl;
 			while (1)
 				revieceChar(drv);
 		}
@@ -48,11 +48,11 @@ vector<char> dissectString(const string& sentence)
 	vector<char> vector;
 	if (sentence.empty())
 	{
-		cout << "falsche Eingabe" << endl;
+		cout << "Falsche Eingabe" << endl;
 	}
 	vector.assign(sentence.begin(), sentence.end());
 	
-	if(debug){cout << "size-dissectString: " << vector.size() << endl;}
+	if(debug){cout << "size-dissectString: " << vector.size() << endl;} //debug
 	return vector;
 }
 
@@ -73,27 +73,26 @@ void sendChar(const char c, B15F &drv)
 void revieceChar(B15F &drv)
 {
 	drv.setRegister(&DDRA, 0x00);
-	// checking if escape was send
 	bool active = false;
+	
 	while (!active)
 	{	
 		active = checkEscape(drv);
-		if(debug){cout << "active " << active << endl;} //Debug
+		if(debug){cout << "active " << active << endl;} //debug
 	}
-	if(debug){cout << "Vor Amount: " << (int)drv.getRegister(&PINA) << endl;}
+	
 	drv.delay_ms(500);	
 	int amount = (int)drv.getRegister(&PINA);
 	
-	if(debug){cout << "amount: " << amount << endl;}
+	if(debug){cout << "amount: " << amount << endl;} //debug
 
 	vector<int> binary;
-	if(debug){cout << "hier1" << endl;} //Debug
 	for (int i = 0; i < amount; i++)
 	{
 		for (int i = 0; i < 3; i++)
 		{
 			drv.delay_ms(500);
-			if(debug){cout << "Register: " << (int)drv.getRegister(&PINA) << endl;} //Debug
+			if(debug){cout << "Register: " << (int)drv.getRegister(&PINA) << endl;} //debug
 			binary.push_back((int)drv.getRegister(&PINA));
 		}
 
