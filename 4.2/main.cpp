@@ -1,150 +1,150 @@
-//PLACEHOLDER CODE
-
 #include <iostream>
 #include <b15f/b15f.h>
 #include <vector>
 
 using namespace std;
 
+void dissectString(const std::string &, vector<char> &);
+void sendChar(const char, B15F &);
 void revieceChar(B15F &);
-void sendChar(char, B15F &);
+char binToChar(const string &);
+bool checkEscape(B15F &);
 void sendEscape(B15F &);
-string setStringtoASCII(string);
-int binaryToDecimal(string);
-char binToChar(const std::string &);
+
+bool debug = true;
 
 int main()
 {
 	B15F &drv = B15F::getInstance();
-    bool running = true;
-    cout << endl
-         << "-------[Zeichenkette senden]-------" << endl;
-
-    while (running)
-    {
-        int decision;
-        cout << endl << "Was mÃ¶chten Sie tun?\n[0] Empfangen\n[1] Senden\n[2] Beenden" << endl;
-        cin >> decision;
-
-        if ((!cin.fail()) && (decision < 3 && decision > -1))
-        {
-            if (decision == 1)
-            {
-                cout << "Bitte geben Sie einen Buchstaben zum Senden ein:" << endl;
-                char c;
-                cin >> c;
-                sendEscape(drv);
-                sendChar(c, drv);
-            }
-            if(!decision)
-            {
-                revieceChar(drv);
-            }
-            else
-            {
-               running = false; 
-            }
-        }
-        // skipping wrong inputs
-        cin.clear();
-        cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-    }
-    cout << "Das Programm wurde beendet" << endl;
+	
+	string sentence;
+	if (std::getline(cin, sentence))
+	{
+		if (sentence == "")
+		{
+			cout << "[System]: Empf„nger" << endl;
+			while (1)
+				revieceChar(drv);
+		}
+		else
+		{
+			vector<char> charVector = dissectString(sentence);
+			sendEscape(drv);
+			sendChar(charVector.size(), drv);
+			for (char c : charVector)
+				sendChar(c, drv);
+		}
+	}
+	else
+		cout << "[System]: Error" << endl;
 }
 
-void sendEscape(B15F &drv)
+vector<char> dissectString(const string &sentence)
 {
-    // ESC: 101-010-101
-    drv.setRegister(&DDRA, 0x07);
-    cout << "[System]: ESC wird gesendet..." << endl;
-    drv.setRegister(&PORTA, 0b101); // 5
-    drv.delay_ms(500);
-    drv.setRegister(&PORTA, 0b010); // 2
-    drv.delay_ms(500);
-    drv.setRegister(&PORTA, 0b101); // 5
-    cout << "[System]: ESC gesendet" << endl;
-    drv.delay_ms(500);
+	if (sentence.empty())
+	{
+		cout << "falsche Eingabe" << endl;
+	}
+	return charVector.assign(sentence.begin(), sentence.end());
+}
+
+void sendChar(const char c, B15F &drv)
+{
+	drv.setRegister(&DDRA, 0x07);
+	string binary = bitset<9>((int)c).to_string();
+	cout << "Wert: " << c << endl
+		 << "Binary: " << binary << endl; // Debug
+
+	for (long unsigned int i = 0; i < binary.length(); i += 3)
+	{
+		drv.setRegister(&PORTA, stoi(binary.substr(i, 3)));
+		drv.delay_ms(500);
+	}
 }
 
 void revieceChar(B15F &drv)
 {
-    drv.setRegister(&DDRA, 0x00);
-    // checking if escape was send
-    bool active = false;
-    int input;
+	drv.setRegister(&DDRA, 0x00);
+	// checking if escape was send
+	bool active = false;
+	while (!active)
+	{
+		active = checkEscape(drv);
+		if(debug){cout << "active " << active << endl;}
+	}
 
-    while (!active)
-    {
+	int amount = (int)drv.getRegister(&PINA);
+	// ToDo
+	// Amount war beim Empfaenger-PC 5 statt 4
 
-        drv.delay_ms(500);
-        input = (int)drv.getRegister(&PINA);
-        // cout << "[System]: " << input << "empfangen" << endl;
-        if (input == 5)
-        {
-            // cout << "[Debug]: input 5" << endl;
-            drv.delay_ms(500);
-            input = (int)drv.getRegister(&PINA);
-            if (input == 2)
-            {
-                // cout << "[Debug]: input 2" << endl;
-                drv.delay_ms(500);
-                input = (int)drv.getRegister(&PINA);
-                if (input == 5)
-                {
-                    // cout << "[Debug]: input 5 erneut" << endl;
-                    active = true;
-                }
-                else
-                    cout << "[System]: Kein ESC bekommen" << endl;
-            }
-            else
-                cout << "[System]: Kein ESC bekommen" << endl;
-        }
-        else
-            cout << "[System]: Kein ESC bekommen" << endl;
-    }
-    cout << "[System]: ESC empfangen" << endl;
+	drv.delay_ms(500);
+	if(debug){cout << "amount: " << amount << endl;}
 
-    vector<int> binary;
-    for (int i = 0; i < 3; i++)
-    {
-        drv.delay_ms(500);
-        binary.push_back((int)drv.getRegister(&PINA));
-    }
+	vector<int> binary;
+	for (int i = 0; i < amount; i++)
+	{
+		for (int i = 0; i < 3; i++)
+		{
+			drv.delay_ms(500);
+			if(debug){cout << "Register: " << (int)drv.getRegister(&PINA) << endl;}
+			binary.push_back((int)drv.getRegister(&PINA));
+		}
 
-    string s = "";
-    for (int i = 0; i < 3; i++)
-        s += std::bitset<3>(binary.at(i)).to_string();
+		string s = "";
+		for (int i = 0; i < 3; i++)
+			s += std::bitset<3>(binary.at(i)).to_string();
 
-    cout << "[System]: " << s << " empfangen" << endl;
-    cout << "[System]: " << binToChar(s) << " (ASCII-Umwandlung)" << endl;
+		cout << "[System]: " << s << " empfangen" << endl;
+		cout << "[System]: " << binToChar(s) << " (ASCII-Umwandlung)" << endl;
+	}
 }
 
-void sendChar(char c, B15F &drv)
+char binToChar(const std::string s)
+{
+	char c = 0;
+	for (int i = 0; i < 9; i++)
+	{
+		if ('1' == s.at(i))
+		{
+			c += (int)pow(2, 8 - i);
+		}
+	}
+	return c;
+}
+
+bool checkEscape(B15F &drv)
+{
+	drv.delay_ms(500);
+	int input = (int)drv.getRegister(&PINA);
+	if (input == 5)
+	{
+		drv.delay_ms(500);
+		input = (int)drv.getRegister(&PINA);
+		if (input == 2)
+		{
+			drv.delay_ms(500);
+			input = (int)drv.getRegister(&PINA);
+			if (input == 5)
+			{
+				cout << "[System]: ESC empfangen" << endl;
+				return true;
+			}
+		}
+	}
+	cout << "[System]: Kein ESC bekommen" << endl;
+	return false;
+}
+
+void sendEscape(B15F &drv)
 {
     drv.setRegister(&DDRA, 0x07);
-    string binary = bitset<9>((int)c).to_string();
-    cout << "Wert: " << c << endl
-         << "Binary: " << binary << endl; // Debug
-
-    for (long unsigned int i = 0; i < binary.length(); i += 3)
-    {
-        cout << "substring: " << binary.substr(i, 3) << endl; // Debug
-        int bin = stoi(binary.substr(i, 3));
-        drv.setRegister(&PORTA, bin);
-        drv.delay_ms(500);
-    }
-}
-
-char binToChar(const std::string &in)
-{
-    char temp = 0;
-    for (int i = 0; i < 9; i++)
-    {
-        if ('1' == in.at(i))
-        {
-            temp += (int)pow(2, 8 - i);
-        }
-    }
-    return temp;
+    cout << "[System]: ESC wird gesendet..." << endl;
+    // ESC: 101-010-101 or 5-2-5
+    drv.setRegister(&PORTA, 0b101);
+    drv.delay_ms(500);
+    drv.setRegister(&PORTA, 0b010);
+    drv.delay_ms(500);
+    drv.setRegister(&PORTA, 0b101);
+    cout << "[System]: ESC gesendet" << endl;
+    drv.delay_ms(500);
 }
