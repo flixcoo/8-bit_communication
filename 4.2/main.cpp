@@ -33,7 +33,7 @@ int main()
 			charVector = dissectString(sentence);
 			sendEscape(drv);
 			int size = charVector.size();
-			if(debug){cout << "size: " << size << endl;}
+			if(debug){cout << "size: " << size << endl;} //Debug
 			sendChar(size, drv); //Groesse rueberschicken
 			for (char c : charVector)
 				sendChar(c, drv);
@@ -78,25 +78,22 @@ void revieceChar(B15F &drv)
 	while (!active)
 	{	
 		active = checkEscape(drv);
-		if(debug){cout << "active " << active << endl;}
+		if(debug){cout << "active " << active << endl;} //Debug
 	}
 	if(debug){cout << "Vor Amount: " << (int)drv.getRegister(&PINA) << endl;}
 	drv.delay_ms(500);	
 	int amount = (int)drv.getRegister(&PINA);
-	// @todo
-	// Amount war beim Empfaenger-PC 5 statt 4
-
-	//drv.delay_ms(500);
+	
 	if(debug){cout << "amount: " << amount << endl;}
 
 	vector<int> binary;
-	if(debug){cout << "hier1" << endl;}
+	if(debug){cout << "hier1" << endl;} //Debug
 	for (int i = 0; i < amount; i++)
 	{
 		for (int i = 0; i < 3; i++)
 		{
 			drv.delay_ms(500);
-			if(debug){cout << "Register: " << (int)drv.getRegister(&PINA) << endl;}
+			if(debug){cout << "Register: " << (int)drv.getRegister(&PINA) << endl;} //Debug
 			binary.push_back((int)drv.getRegister(&PINA));
 		}
 

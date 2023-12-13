@@ -44,7 +44,7 @@ int main()
         }
         // skipping wrong inputs
         cin.clear();
-        cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
     }
     cout << endl << "[System]: Programm beendet" << endl << endl;
 }
