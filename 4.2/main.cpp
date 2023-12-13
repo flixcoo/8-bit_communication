@@ -4,10 +4,10 @@
 
 using namespace std;
 
-void dissectString(const std::string &, vector<char> &);
+vector<char> dissectString(const string&);
 void sendChar(const char, B15F &);
 void revieceChar(B15F &);
-char binToChar(const string &);
+char binToChar(const string);
 bool checkEscape(B15F &);
 void sendEscape(B15F &);
 
@@ -18,6 +18,8 @@ int main()
 	B15F &drv = B15F::getInstance();
 	
 	string sentence;
+	vector<char> charVector;
+
 	if (std::getline(cin, sentence))
 	{
 		if (sentence == "")
@@ -28,9 +30,11 @@ int main()
 		}
 		else
 		{
-			vector<char> charVector = dissectString(sentence);
+			charVector = dissectString(sentence);
 			sendEscape(drv);
-			sendChar(charVector.size(), drv);
+			int size = charVector.size();
+			if(debug){cout << "size: " << size << endl;}
+			sendChar(size, drv); //Groesse rueberschicken
 			for (char c : charVector)
 				sendChar(c, drv);
 		}
@@ -39,13 +43,17 @@ int main()
 		cout << "[System]: Error" << endl;
 }
 
-vector<char> dissectString(const string &sentence)
+vector<char> dissectString(const string& sentence)
 {
+	vector<char> vector;
 	if (sentence.empty())
 	{
 		cout << "falsche Eingabe" << endl;
 	}
-	return charVector.assign(sentence.begin(), sentence.end());
+	vector.assign(sentence.begin(), sentence.end());
+	
+	if(debug){cout << "size-dissectString: " << vector.size() << endl;}
+	return vector;
 }
 
 void sendChar(const char c, B15F &drv)
@@ -68,19 +76,21 @@ void revieceChar(B15F &drv)
 	// checking if escape was send
 	bool active = false;
 	while (!active)
-	{
+	{	
 		active = checkEscape(drv);
 		if(debug){cout << "active " << active << endl;}
 	}
-
+	if(debug){cout << "Vor Amount: " << (int)drv.getRegister(&PINA) << endl;}
+	drv.delay_ms(500);	
 	int amount = (int)drv.getRegister(&PINA);
-	// ToDo
+	// @todo
 	// Amount war beim Empfaenger-PC 5 statt 4
 
-	drv.delay_ms(500);
+	//drv.delay_ms(500);
 	if(debug){cout << "amount: " << amount << endl;}
 
 	vector<int> binary;
+	if(debug){cout << "hier1" << endl;}
 	for (int i = 0; i < amount; i++)
 	{
 		for (int i = 0; i < 3; i++)
@@ -90,16 +100,16 @@ void revieceChar(B15F &drv)
 			binary.push_back((int)drv.getRegister(&PINA));
 		}
 
-		string s = "";
+		string binaryString = "";
 		for (int i = 0; i < 3; i++)
-			s += std::bitset<3>(binary.at(i)).to_string();
-
-		cout << "[System]: " << s << " empfangen" << endl;
-		cout << "[System]: " << binToChar(s) << " (ASCII-Umwandlung)" << endl;
+			binaryString += std::bitset<3>(binary.at(i)).to_string();
+		string s = "abc";
+		cout << "[System]: " << binaryString << " empfangen" << endl;
+		cout << "[System]: " << binToChar(binaryString) << " (ASCII-Umwandlung)" << endl;
 	}
 }
 
-char binToChar(const std::string s)
+char binToChar(const string s)
 {
 	char c = 0;
 	for (int i = 0; i < 9; i++)
@@ -114,10 +124,10 @@ char binToChar(const std::string s)
 
 bool checkEscape(B15F &drv)
 {
-	drv.delay_ms(500);
+	drv.delay_ms(250);
 	int input = (int)drv.getRegister(&PINA);
 	if (input == 5)
-	{
+	{	
 		drv.delay_ms(500);
 		input = (int)drv.getRegister(&PINA);
 		if (input == 2)
@@ -126,6 +136,7 @@ bool checkEscape(B15F &drv)
 			input = (int)drv.getRegister(&PINA);
 			if (input == 5)
 			{
+				drv.delay_ms(500);
 				cout << "[System]: ESC empfangen" << endl;
 				return true;
 			}
