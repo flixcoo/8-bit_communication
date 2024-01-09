@@ -23,34 +23,34 @@ int main() {
 	B15F &drv = B15F::getInstance();
 	
 	bool running = true;
-    while (running) {
-        int decision;
-        cout << endl
-             << "Was möchten Sie tun?\n[0] Empfangen\n[1] Senden\n[2] Exit" << endl;
-        cin >> decision;
+    	while (running) {
+        	int decision;
+        	cout << endl
+             	<< "Was möchten Sie tun?\n[0] Empfangen\n[1] Senden\n[2] Exit" << endl;
+        	cin >> decision;
 
-        if ((!cin.fail()) && (decision < 3 && decision > -1)) {
-            if (!decision)
-                receive(drv);
-            if (decision) {
-                if (decision == 2)
-                    running = false;
-                else {
-                    cout << "Bitte geben Sie einen Satz zum Senden ein:" << endl;
-                    string sentence;
-                    cin >> sentence;
-                    //cin.ignore(); // Clear newline character from previous input
-                    //getline(cin, sentence);
-                    vector<char> charVector;
-                    dissectString(sentence, charVector); 
-                    sendEscape(drv);
-                    sendSentence(charVector, drv);
-                }
-            }
-        }
+	       	if ((!cin.fail()) && (decision < 3 && decision > -1)) {
+				if (!decision)
+					receive(drv);
+				if (decision) {
+				    if (decision == 2)
+				        running = false;
+				    else {
+				        cout << "Bitte geben Sie einen Satz zum Senden ein:" << endl;
+				        string sentence;
+				        cin >> sentence;
+				        //cin.ignore(); // Clear newline character from previous input
+				        //getline(cin, sentence);
+				        vector<char> charVector;
+				        dissectString(sentence, charVector); 
+				        sendEscape(drv);
+				        sendSentence(charVector, drv);
+				    }
+				}
+		}
         // skipping wrong inputs
-        cin.clear();
-        cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        	cin.clear();
+        	cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     }
     cout << endl << "[System]: Programm beendet" << endl << endl;
 }
@@ -138,15 +138,15 @@ void receiveChar(B15F &drv, int length) {
    	for(int zahl : binary) {
    		cout << zahl << endl;
    	}
-    cout << "Bin hier";
-    for(int i = 0; i < length; i += 3) {
-    	string bitfolge = "";
-    	for(int j = 0; j < 3; j++) {
-    		bitfolge += bitset<3>(binary.at(i + j)).to_string();
-    		cout << "[System]: " << s << " empfangen" << endl;
-    		s += binToChar(bitfolge); 
-    	}
-    }
+
+    for (unsigned long int i = 3; i < binary.size(); i += 3) {
+		string bitfolge = "";
+		for (unsigned long int j = 0; j < 3 && (i + j) < binary.size(); j++) {
+		    bitfolge += bitset<3>(binary.at(i + j)).to_string();
+		}
+		cout << "[System]: " << binToChar(bitfolge) << " empfangen" << endl;
+		s += binToChar(bitfolge);
+	}
     //for(int i = 0; i < 3; i++) {
     	//bitfolge += bitset<3>(binary.at(i)).to_string();
     //}
@@ -171,7 +171,6 @@ void sendLength(int length, B15F &drv) {
 }
 
 char binToChar(string &bitfolge) {
-	cout << "Bin hier in Char";
     char c = 0;
     for (int i = 0; i < 9; i++)
     {
