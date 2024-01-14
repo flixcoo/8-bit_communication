@@ -170,7 +170,7 @@ void sendLength(int length, B15F &drv) {
 	}
 }
 
-char binToChar(string &bitfolge) {
+char binToChar(string &binary) {
     char c = 0;
     for (int i = 0; i < 9; i++)
     {
@@ -181,6 +181,17 @@ char binToChar(string &bitfolge) {
     }
     return c;
 }
+
+bool checkForParity(string binary)
+{
+	int count = 0;
+	for(int i = 1; i < binary.length(); i++)
+		if(binary.at(i) == 1)
+			count++;
+	return (count % 2 == 0) == (binary.at(0) == '0');
+}
+//Bei einer geraden Anzahl an '1' wird das MSB (9. Bit) == 0,
+//bei einer ungeraden Anzahl wird MSB == 1
 
 
 
