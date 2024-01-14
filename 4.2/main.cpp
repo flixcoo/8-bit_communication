@@ -11,11 +11,11 @@ bool checkEscape(B15F &);
 void sendSentence(vector<char>& charVector, B15F &drv);
 void receiveChar(B15F &drv, int length_number);
 string binToString(const vector<int> &binary);
-char binToChar(const string &in );
 void sendLength(int length, B15F &drv);
 int receiveLength(B15F &drv);
 void receive(B15F &drv);
-char binToChar(string &bitfolge);
+char binToChar(string binary);
+bool checkForParity(string binary);
 
 string s = "";
 
@@ -140,15 +140,15 @@ void receiveChar(B15F &drv, int length) {
    	}
 
     for (unsigned long int i = 3; i < binary.size(); i += 3) {
-		string bitfolge = "";
+		string binary = "";
 		for (unsigned long int j = 0; j < 3 && (i + j) < binary.size(); j++) {
-		    bitfolge += bitset<3>(binary.at(i + j)).to_string();
+		    binary += bitset<3>(binary.at(i + j)).to_string();
 		}
-		cout << "[System]: " << binToChar(bitfolge) << " empfangen" << endl;
-		s += binToChar(bitfolge);
+		cout << "[System]: " << binToChar(binary) << " empfangen" << endl;
+		s += binToChar(binary);
 	}
     //for(int i = 0; i < 3; i++) {
-    	//bitfolge += bitset<3>(binary.at(i)).to_string();
+    	//binary += bitset<3>(binary.at(i)).to_string();
     //}
 
     //string sentence = binToString(binary);
@@ -170,11 +170,11 @@ void sendLength(int length, B15F &drv) {
 	}
 }
 
-char binToChar(string &binary) {
+char binToChar(string binary) {
     char c = 0;
     for (int i = 0; i < 9; i++)
     {
-        if ('1' == bitfolge.at(i))
+        if ('1' == binary.at(i))
         {
             c += (int)pow(2, 8 - i);
         }
@@ -182,6 +182,8 @@ char binToChar(string &binary) {
     return c;
 }
 
+//Bei einer geraden Anzahl an '1' wird das MSB (9. Bit) == 0,
+//bei einer ungeraden Anzahl wird MSB == 1
 bool checkForParity(string binary)
 {
 	int count = 0;
@@ -190,8 +192,7 @@ bool checkForParity(string binary)
 			count++;
 	return (count % 2 == 0) == (binary.at(0) == '0');
 }
-//Bei einer geraden Anzahl an '1' wird das MSB (9. Bit) == 0,
-//bei einer ungeraden Anzahl wird MSB == 1
+
 
 
 
