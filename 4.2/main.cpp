@@ -14,10 +14,10 @@ string binToString(const vector<int> &binary);
 void sendLength(int length, B15F &drv);
 int receiveLength(B15F &drv);
 void receive(B15F &drv);
-char binToChar(string binary);
+char binaryToChar(string binary);
 bool checkForParity(string binary);
 
-string s = "";
+string s = ""; //wofuer ist diese variable?
 
 int main() {
 	B15F &drv = B15F::getInstance();
@@ -144,8 +144,8 @@ void receiveChar(B15F &drv, int length) {
 		for (unsigned long int j = 0; j < 3 && (i + j) < binary.size(); j++) {
 		    binary += bitset<3>(binary.at(i + j)).to_string();
 		}
-		cout << "[System]: " << binToChar(binary) << " empfangen" << endl;
-		s += binToChar(binary);
+		cout << "[System]: " << binaryToChar(binary) << " empfangen" << endl;
+		s += binaryToChar(binary);
 	}
     //for(int i = 0; i < 3; i++) {
     	//binary += bitset<3>(binary.at(i)).to_string();
@@ -170,15 +170,11 @@ void sendLength(int length, B15F &drv) {
 	}
 }
 
-char binToChar(string binary) {
+char binaryToChar(string binary) {
     char c = 0;
     for (int i = 0; i < 9; i++)
-    {
         if ('1' == binary.at(i))
-        {
             c += (int)pow(2, 8 - i);
-        }
-    }
     return c;
 }
 
