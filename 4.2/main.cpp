@@ -9,15 +9,16 @@ void dissectString(const string&, vector<char>&);
 void sendEscape(B15F &);
 bool checkEscape(B15F &);
 void sendSentence(vector<char>& charVector, B15F &drv);
-void receiveChar(B15F &drv, int length_number);
+void receiveChar(B15F &drv, int sentenceLength);
 string binToString(const vector<int> &binary);
 void sendLength(int length, B15F &drv);
 int receiveLength(B15F &drv);
 void receive(B15F &drv);
 char binaryToChar(string binary);
 bool checkForParity(string binary);
+int binaryToDecimal(string binary);
 
-string s = ""; //wofuer ist diese variable?
+string s = ""; //globale satz variable
 
 int main() {
 	B15F &drv = B15F::getInstance();
@@ -38,26 +39,29 @@ int main() {
 				    else {
 				        cout << "Bitte geben Sie einen Satz zum Senden ein:" << endl;
 				        string sentence;
-				        cin >> sentence;
-				        //cin.ignore(); // Clear newline character from previous input
-				        //getline(cin, sentence);
-				        vector<char> charVector;
-				        dissectString(sentence, charVector); 
+						vector<char> charVector;
+						cin.ignore();
+						getline(cin, sentence);
+						cout << "sentence: " << sentence << endl;
+				        dissectString(sentence, charVector);
 				        sendEscape(drv);
 				        sendSentence(charVector, drv);
 				    }
 				}
+			else{
+				// skipping wrong inputs
+       			cin.clear();
+        		cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+			}
 		}
-        // skipping wrong inputs
-        	cin.clear();
-        	cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+		cout << "test5" << endl;
     }
     cout << endl << "[System]: Programm beendet" << endl << endl;
 }
 
 void dissectString(const string& sentence, vector<char>& charVector) {
 	if(sentence.empty()) {
-		cout << "falsche Eingabe" << endl;
+		cout << "[System]: Variable 'Sentence' ist leer" << endl;
 	}
 	charVector.assign(sentence.begin(), sentence.end());
 }
@@ -66,14 +70,14 @@ void sendEscape(B15F &drv)
 {
     
     drv.setRegister(&DDRA, 0x07);
-    cout << "[System]: ESC wird gesendet..." << endl;
+    cout << "[sendEscape]: ESC wird gesendet..." << endl;
     // ESC: 101-010-101 or 5-2-5
     drv.setRegister(&PORTA, 0b101);
     drv.delay_ms(500);
     drv.setRegister(&PORTA, 0b010);
     drv.delay_ms(500);
     drv.setRegister(&PORTA, 0b101);
-    cout << "[System]: ESC gesendet" << endl;
+    cout << "[sendEscape]: ESC gesendet" << endl;
     drv.delay_ms(500);
 }
 
@@ -91,28 +95,29 @@ bool checkEscape(B15F &drv)
             input = (int)drv.getRegister(&PINA);
             if (input == 5)
             {
-                cout << "[System]: ESC empfangen" << endl;
+                cout << "[checkEscape]: ESC empfangen" << endl;
                 return true;
             }
         }
     }
-    cout << "[System]: Kein ESC bekommen" << endl;
+    cout << "[checkEscape]: Kein ESC bekommen" << endl;
     return false;
 }
 
-
-
 void sendSentence(vector<char>& charVector, B15F &drv) {
 	int length = charVector.size();
+	cout << "[sendSentence]: charVector hat Länge = " << length << endl;
 	sendLength(length, drv);
 	for(char character : charVector) {
+		cout << "test1" << endl;
 		string binary = bitset<9>((int)character).to_string();
-		cout << "Wert: " << character << endl << "Binary: " << binary << endl;
-		
+		cout << "test2" << endl;
 		for(long unsigned int i = 0; i < binary.length(); i += 3) {
 			drv.setRegister(&PORTA, stoi(binary.substr(i, 3)));
 			drv.delay_ms(500);
+			cout << "test3" << endl;
 		}
+		cout << "test4" << endl;
 	}
 }
 
@@ -123,14 +128,14 @@ void receive(B15F &drv) {
     {
         active = checkEscape(drv);
     }
-    int length_number = receiveLength(drv);
-    receiveChar(drv, length_number);
-    cout << "Der Satz ist: " << endl << s << endl;
+    int sentenceLength = receiveLength(drv);
+    receiveChar(drv, sentenceLength);
+    cout << "[recieve]: Empfangener Satz = " << endl << s << endl;
 }
 
-void receiveChar(B15F &drv, int length) {
+void receiveChar(B15F &drv, int sentenceLength) {
     vector<int> binary;
-    for (int i = 0; i < (length + 1) * 3; i++) //Gleichung damit das letzte Zeichen mit gezählt wird
+    for (int i = 0; i < sentenceLength * 3; i++) //Gleichung damit das letzte Zeichen mit gezählt wird
     {
         drv.delay_ms(500);
         binary.push_back((int)drv.getRegister(&PINA)); 
@@ -140,42 +145,70 @@ void receiveChar(B15F &drv, int length) {
    	}
 
     for (unsigned long int i = 3; i < binary.size(); i += 3) {
-		string binary = "";
+		string charAsBinary = "";
 		for (unsigned long int j = 0; j < 3 && (i + j) < binary.size(); j++) {
-		    binary += bitset<3>(binary.at(i + j)).to_string();
+		    charAsBinary += bitset<3>(binary.at(i + j)).to_string();
 		}
-		cout << "[System]: " << binaryToChar(binary) << " empfangen" << endl;
-		s += binaryToChar(binary);
+		cout << "[receiveChar]: " << charAsBinary << " (binary)" << endl;
+		cout << "[receiveChar]: " << binaryToChar(charAsBinary) << " empfangen" << endl;
+		s += binaryToChar(charAsBinary);
 	}
-    //for(int i = 0; i < 3; i++) {
-    	//binary += bitset<3>(binary.at(i)).to_string();
-    //}
-
-    //string sentence = binToString(binary);
-    //cout << "[System]: " << sentence << " empfangen" << endl;
 }
 
 int receiveLength(B15F &drv) {
-	int length_number = (int)drv.getRegister(&PINA);
-	return length_number;
+	vector<int> sentenceLength;
+    for (int i = 0; i < 3 ; i++) //Gleichung damit das letzte Zeichen mit gezählt wird
+    {
+		cout << "[receiveLength]: receiving now" << endl;
+        sentenceLength.push_back((int)drv.getRegister(&PINA)); 
+		cout << "[receiveLength]: i = " << i << endl;
+		drv.delay_ms(500);
+    }
+	
+	//Debug
+	cout << "[Debug]: length-vector: ";
+	for(int i: sentenceLength)
+		cout << "[" << i <<"] ";
+	cout << endl;
+	//Debug 
+	
+	string sentenceLengthInBinary = "";
+	for (unsigned long int i = 0; i < sentenceLength.size() ; i++) {
+		sentenceLengthInBinary += bitset<3>(sentenceLength.at(i)).to_string();
+	}
+	cout << "[receiveLength]: Empfangene Länge (Binär) = " << sentenceLengthInBinary << endl;
+	cout << "[receiveLength]: Empfangene Länge (Dezimal) = " << binaryToDecimal(sentenceLengthInBinary) << endl;
+	return binaryToDecimal(sentenceLengthInBinary);
 }
 
 void sendLength(int length, B15F &drv) {
 	string binary = bitset<9>(length).to_string();
-	cout << "Wert: " << length << endl << "Binary: " << binary << endl;
+	cout << "[sendLength]: Länge = " << length << "\n[sendLength]: Binary = " << binary << endl;
 		
 	for(long unsigned int i = 0; i < binary.length(); i += 3) {
+		cout << "[sendLength]: Sending = " << binary.substr(i, 3) << endl;
 		drv.setRegister(&PORTA, stoi(binary.substr(i, 3)));
+		cout << "[sendLength]: i = " << i << endl;
 		drv.delay_ms(500);
 	}
 }
 
-char binaryToChar(string binary) {
+char binaryToChar(string binary)
+{
     char c = 0;
-    for (int i = 0; i < 9; i++)
+    for (int i = 0; i < binary.length(); i++)
         if ('1' == binary.at(i))
             c += (int)pow(2, 8 - i);
     return c;
+}
+
+int binaryToDecimal(string binary)
+{
+    int decimal = 0;
+    for (int i = 0; i < binary.length(); i++)
+        if ('1' == binary.at(i))
+            decimal += pow(2, 8 - i);
+    return decimal;
 }
 
 //Bei einer geraden Anzahl an '1' wird das MSB (9. Bit) == 0,
@@ -188,11 +221,3 @@ bool checkForParity(string binary)
 			count++;
 	return (count % 2 == 0) == (binary.at(0) == '0');
 }
-
-
-
-
-
-
-
-

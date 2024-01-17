@@ -14,8 +14,6 @@ int main()
 {
     B15F &drv = B15F::getInstance();
 
-    cout << endl
-         << "-------[V-1.5]-------" << endl;
     bool running = true;
     while (running)
     {
