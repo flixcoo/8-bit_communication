@@ -1,11 +1,4 @@
-#include <iostream>
-#include <b15f/b15f.h>
-#include <vector>
-#include <string>
-
 #include "main.hpp"
-
-using namespace std;
 
 int main()
 {
@@ -16,7 +9,7 @@ int main()
 	{
 		int decision;
 		cout << endl
-			 << "Was m”chten Sie tun?\n[0] Empfangen\n[1] Senden\n[2] Exit" << endl;
+			 << "Was möchten Sie tun?\n[0] Empfangen\n[1] Senden\n[2] Exit" << endl;
 		cin >> decision;
 
 		if ((!cin.fail()) && (decision < 3 && decision > -1))
@@ -161,8 +154,8 @@ int receiveLength(B15F &drv)
 	for (long unsigned int i = 0; i < sentenceLengthVector.size(); i++)
 		sentenceLengthInBinary += bitset<3>(sentenceLengthVector.at(i)).to_string();
 
-	cout << "[receiveLength]: Empfangene L„nge (Bin„r) = " << sentenceLengthInBinary
-		 << "\n[receiveLength]: Empfangene L„nge (Dezimal) = " << binaryToDecimal(sentenceLengthInBinary);
+	cout << "[receiveLength]: Empfangene Länge (Binär) = " << sentenceLengthInBinary
+		 << "\n[receiveLength]: Empfangene Länge (Dezimal) = " << binaryToDecimal(sentenceLengthInBinary);
 	return binaryToDecimal(sentenceLengthInBinary);
 }
 
@@ -181,12 +174,12 @@ string receiveSentence(B15F &drv, const int sentenceLength)
 	}
 
 	string sentence;
-	// for-Schleife fr die 3er Pakete
+	// for-Schleife fr die 3er Pakete
 	for (unsigned long int i = 0; i < receivedNumsVector.size(); i += 3)
 	{
 		string numAsBinary = "";
 		for (unsigned long int j = 0; j < 3; j++)
-		{ // for-Schleife fr die einzelnen 3 Teile jedes  Zeichens
+		{ // for-Schleife fr die einzelnen 3 Teile jedes  Zeichens
 			numAsBinary += bitset<3>(receivedNumsVector.at(i + j)).to_string();
 			cout << "[receiveSentence]: " << numAsBinary << " empfangen (binary)" << endl;
 		}

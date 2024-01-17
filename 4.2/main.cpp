@@ -1,11 +1,4 @@
-#include <iostream>
-#include <b15f/b15f.h>
-#include <vector>
-#include <string>
-
 #include "main.hpp"
-
-using namespace std;
 
 int main()
 {
