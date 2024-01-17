@@ -1,20 +1,10 @@
-#include <iostream>
-#include <b15f/b15f.h>
-#include <vector>
-
-using namespace std;
-
-void sendEscape(B15F &);
-bool checkEscape(B15F &);
-void revieceChar(B15F &);
-void sendChar(char, B15F &);
-char binToChar(const string &);
+#include "main.hpp"
 
 int main()
 {
     B15F &drv = B15F::getInstance();
-
     bool running = true;
+    
     while (running)
     {
         int decision;
@@ -88,12 +78,10 @@ bool checkEscape(B15F &drv)
 void revieceChar(B15F &drv)
 {
     drv.setRegister(&DDRA, 0x00);
-    // checking if escape was send
     bool active = false;
+
     while (!active)
-    {
         active = checkEscape(drv);
-    }
 
     vector<int> binary;
     for (int i = 0; i < 3; i++)
@@ -107,7 +95,7 @@ void revieceChar(B15F &drv)
         s += std::bitset<3>(binary.at(i)).to_string();
 
     cout << "[System]: " << s << " empfangen" << endl;
-    cout << "[System]: " << binToChar(s) << " (ASCII-Umwandlung)" << endl;
+    cout << "[System]: " << binaryToChar(s) << " (ASCII-Umwandlung)" << endl;
 }
 
 void sendChar(const char c, B15F &drv)
@@ -124,15 +112,11 @@ void sendChar(const char c, B15F &drv)
     }
 }
 
-char binToChar(const std::string &in)
+char binaryToChar(const string binary)
 {
-    char c = 0;
-    for (int i = 0; i < 9; i++)
-    {
-        if ('1' == in.at(i))
-        {
-            c += (int)pow(2, 8 - i);
-        }
-    }
-    return c;
+	char c = 0;
+	for (long unsigned int i = 0; i < binary.length(); i++)
+		if ('1' == binary.at(i))
+			c += (int)pow(2, 8 - i);
+	return c;
 }
