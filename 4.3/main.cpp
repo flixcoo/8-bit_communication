@@ -3,22 +3,9 @@
 #include <vector>
 #include <string>
 
-#include "helper.cpp"
+#include "main.hpp"
 
 using namespace std;
-
-vector<char> dissectString(const string sentence);
-void sendEscape(B15F &);
-bool checkEscape(B15F &);
-void sendSentence(vector<char> &charVector, B15F &drv);
-string receiveSentence(B15F &drv, int sentenceLength);
-string binToString(const vector<int> &binary);
-void sendLength(int length, B15F &drv);
-int receiveLength(B15F &drv);
-void receiveMode(B15F &drv);
-char binaryToChar(string binary);
-bool checkForParity(string binary);
-int binaryToDecimal(string binary);
 
 int main()
 {
@@ -87,11 +74,6 @@ int main()
 	}
 } */
 
-vector<char> dissectString(const string sentence)
-{
-	return vector<char>(sentence.begin(), sentence.end());
-}
-
 void sendEscape(B15F &drv)
 {
 	drv.setRegister(&DDRA, 0x07);
@@ -105,7 +87,7 @@ void sendEscape(B15F &drv)
 	drv.delay_ms(500);
 }
 
-void sendLength(int length, B15F &drv)
+void sendLength(const int length, B15F &drv)
 {
 	string lengthBinary = bitset<9>(length).to_string();
 	for (long unsigned int i = 0; i < lengthBinary.length(); i += 3)
@@ -115,7 +97,7 @@ void sendLength(int length, B15F &drv)
 	}
 }
 
-void sendSentence(vector<char> &charVector, B15F &drv)
+void sendSentence(const vector<char> charVector, B15F &drv)
 {
 	int length = charVector.size();
 	sendLength(length, drv);
@@ -179,12 +161,12 @@ int receiveLength(B15F &drv)
 	for (long unsigned int i = 0; i < sentenceLengthVector.size(); i++)
 		sentenceLengthInBinary += bitset<3>(sentenceLengthVector.at(i)).to_string();
 
-	cout << "[receiveLength]: Empfangene L„nge (Bin„r) = " << sentenceLengthInBinary 
-	     << "\n[receiveLength]: Empfangene L„nge (Dezimal) = " << binaryToDecimal(sentenceLengthInBinary);
+	cout << "[receiveLength]: Empfangene L„nge (Bin„r) = " << sentenceLengthInBinary
+		 << "\n[receiveLength]: Empfangene L„nge (Dezimal) = " << binaryToDecimal(sentenceLengthInBinary);
 	return binaryToDecimal(sentenceLengthInBinary);
 }
 
-string receiveSentence(B15F &drv, int sentenceLength)
+string receiveSentence(B15F &drv, const int sentenceLength)
 {
 	vector<int> receivedNumsVector;
 
@@ -197,19 +179,6 @@ string receiveSentence(B15F &drv, int sentenceLength)
 		receivedNumsVector.push_back((int)drv.getRegister(&PINA));
 		cout << "[receiveSentence]: Empfangene Zahl = " << receivedNumsVector.at(i) << endl;
 	}
-
-	// debug
-	// printing received numbers
-	cout << "[receiveSentence]: Empfangene Nums" << endl
-		 << endl;
-	for (long unsigned int i = 0; i < receivedNumsVector.size(); i++)
-	{
-		cout << "[" << receivedNumsVector.at(i) << "] ";
-		if (i + 1 % 3 == 0)
-			cout << endl;
-	}
-	cout << endl
-		 << endl;
 
 	string sentence;
 	// for-Schleife fr die 3er Pakete
@@ -226,7 +195,12 @@ string receiveSentence(B15F &drv, int sentenceLength)
 	return sentence;
 }
 
-char binaryToChar(string binary)
+vector<char> dissectString(const string sentence)
+{
+	return vector<char>(sentence.begin(), sentence.end());
+}
+
+char binaryToChar(const string binary)
 {
 	char c = 0;
 	for (long unsigned int i = 0; i < binary.length(); i++)
@@ -235,7 +209,7 @@ char binaryToChar(string binary)
 	return c;
 }
 
-int binaryToDecimal(string binary)
+int binaryToDecimal(const string binary)
 {
 	int decimal = 0;
 	for (long unsigned int i = 0; i < binary.length(); i++)
@@ -246,7 +220,7 @@ int binaryToDecimal(string binary)
 
 // Bei einer geraden Anzahl an '1' wird das MSB (9. Bit) == 0,
 // bei einer ungeraden Anzahl wird MSB == 1
-bool checkForParity(string binary)
+bool checkForParity(const string binary)
 {
 	int count = 0;
 	for (long unsigned int i = 1; i < binary.length(); i++)
