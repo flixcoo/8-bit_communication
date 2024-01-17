@@ -9,7 +9,7 @@ void dissectString(const string&, vector<char>&);
 void sendEscape(B15F &);
 bool checkEscape(B15F &);
 void sendSentence(vector<char>& charVector, B15F &drv);
-void receiveChar(B15F &drv, int sentenceLength);
+string receiveSentence(B15F &drv, int sentenceLength);
 string binToString(const vector<int> &binary);
 void sendLength(int length, B15F &drv);
 int receiveLength(B15F &drv);
@@ -17,8 +17,6 @@ void receive(B15F &drv);
 char binaryToChar(string binary);
 bool checkForParity(string binary);
 int binaryToDecimal(string binary);
-
-string s = ""; //globale satz variable
 
 int main() {
 	B15F &drv = B15F::getInstance();
@@ -106,18 +104,14 @@ bool checkEscape(B15F &drv)
 
 void sendSentence(vector<char>& charVector, B15F &drv) {
 	int length = charVector.size();
-	cout << "[sendSentence]: charVector hat Länge = " << length << endl;
 	sendLength(length, drv);
 	for(char character : charVector) {
-		cout << "test1" << endl;
 		string binary = bitset<9>((int)character).to_string();
-		cout << "test2" << endl;
 		for(long unsigned int i = 0; i < binary.length(); i += 3) {
 			drv.setRegister(&PORTA, stoi(binary.substr(i, 3)));
+			cout << "[sendSentence]: Sending " << binary.substr(i, 3) << endl;
 			drv.delay_ms(500);
-			cout << "test3" << endl;
 		}
-		cout << "test4" << endl;
 	}
 }
 
@@ -129,52 +123,71 @@ void receive(B15F &drv) {
         active = checkEscape(drv);
     }
     int sentenceLength = receiveLength(drv);
-    receiveChar(drv, sentenceLength);
-    cout << "[recieve]: Empfangener Satz = " << endl << s << endl;
+    string sentence = receiveSentence(drv, sentenceLength);
+    cout << "[recieve]: Empfangener Satz = " << sentence << endl;
 }
 
-void receiveChar(B15F &drv, int sentenceLength) {
-    vector<int> binary;
-    for (int i = 0; i < sentenceLength * 3; i++) //Gleichung damit das letzte Zeichen mit gezählt wird
-    {
-        drv.delay_ms(500);
-        binary.push_back((int)drv.getRegister(&PINA)); 
-    }
-   	for(int zahl : binary) {
-   		cout << zahl << endl;
-   	}
+string receiveSentence(B15F &drv, int sentenceLength) {
+    vector<int> receivedNumsVector;
 
-    for (unsigned long int i = 3; i < binary.size(); i += 3) {
-		string charAsBinary = "";
-		for (unsigned long int j = 0; j < 3 && (i + j) < binary.size(); j++) {
-		    charAsBinary += bitset<3>(binary.at(i + j)).to_string();
-		}
-		cout << "[receiveChar]: " << charAsBinary << " (binary)" << endl;
-		cout << "[receiveChar]: " << binaryToChar(charAsBinary) << " empfangen" << endl;
-		s += binaryToChar(charAsBinary);
+    for (int i = 0; i < sentenceLength * 3; i++) //sentenceLength * 3 = Anzahl an Zeichen die empfangen werden
+    {
+        cout << "[receiveSentence]: i = " << i << endl;
+		cout << "[receiveSentence]: sentenceLength = " << sentenceLength << endl;
+		cout << "[receiveSentence]: " << i << " < "<< sentenceLength << endl;
+		drv.delay_ms(500);
+        receivedNumsVector.push_back((int)drv.getRegister(&PINA)); 
+		cout << "[receiveSentence]: Empfangene Zahl = " << receivedNumsVector.at(i) << endl;
+    }
+
+	//debug
+	//printing received numbers
+	cout << "[receiveSentence]: Empfangene Nums" << endl << endl;
+   	for(long unsigned int i = 0; i < receivedNumsVector.size(); i++){
+		cout << "[" << receivedNumsVector.at(i) << "] ";
+		if(i+1 % 3 == 0)
+			cout << endl;
 	}
+	cout << endl << endl;
+   		
+	string Sentence;
+	//for-Schleife für die 3er Pakete
+    for (unsigned long int i = 0; i < receivedNumsVector.size(); i += 3) { 
+		string numAsBinary = "";
+		for (unsigned long int j = 0; j < 3 ; j++) {//for-Schleife für die einzelnen 3 Teile jedes  Zeichens
+		    numAsBinary += bitset<3>(receivedNumsVector.at(i+j)).to_string();
+		cout << "[receiveSentence]: " << numAsBinary << " empfangen (binary)" << endl;
+		
+		}
+		Sentence += binaryToChar(numAsBinary);
+	}
+	return Sentence;
 }
 
 int receiveLength(B15F &drv) {
-	vector<int> sentenceLength;
-    for (int i = 0; i < 3 ; i++) //Gleichung damit das letzte Zeichen mit gezählt wird
+
+	vector<int> sentenceLengthVector;
+   for (int i = 0; i < 3 ; i++) //Gleichung damit das letzte Zeichen mit gezählt wird
     {
-		cout << "[receiveLength]: receiving now" << endl;
-        sentenceLength.push_back((int)drv.getRegister(&PINA)); 
-		cout << "[receiveLength]: i = " << i << endl;
 		drv.delay_ms(500);
+		cout << "[receiveLength]: receiving now" << endl;
+        sentenceLengthVector.push_back((int)drv.getRegister(&PINA)); 
+		cout << "[receiveLength]: i = " << i << endl;
     }
 	
 	//Debug
 	cout << "[Debug]: length-vector: ";
-	for(int i: sentenceLength)
-		cout << "[" << i <<"] ";
+	for (long unsigned int i = 0; i < sentenceLengthVector.size(); i++)
+		cout << "[" << sentenceLengthVector.at(i) <<"] ";
 	cout << endl;
 	//Debug 
 	
 	string sentenceLengthInBinary = "";
-	for (unsigned long int i = 0; i < sentenceLength.size() ; i++) {
-		sentenceLengthInBinary += bitset<3>(sentenceLength.at(i)).to_string();
+	for (long unsigned int i = 0; i < sentenceLengthVector.size(); i++) {
+		cout << "[receiveLength]: i = " << i << endl;
+		cout << "[receiveLength]: sentenceLengthVector.at(i) = " << sentenceLengthVector.at(i) << endl;
+		sentenceLengthInBinary += bitset<3>(sentenceLengthVector.at(i)).to_string();
+		cout << "[receiveLength]: sentenceLengthInBinary = " << sentenceLengthInBinary << endl;
 	}
 	cout << "[receiveLength]: Empfangene Länge (Binär) = " << sentenceLengthInBinary << endl;
 	cout << "[receiveLength]: Empfangene Länge (Dezimal) = " << binaryToDecimal(sentenceLengthInBinary) << endl;
@@ -183,12 +196,11 @@ int receiveLength(B15F &drv) {
 
 void sendLength(int length, B15F &drv) {
 	string binary = bitset<9>(length).to_string();
-	cout << "[sendLength]: Länge = " << length << "\n[sendLength]: Binary = " << binary << endl;
+	cout << "[sendLength]: Länge (Dezimal) = " << length << "\n[sendLength]: Länge (Binär) = " << binary << endl;
 		
 	for(long unsigned int i = 0; i < binary.length(); i += 3) {
 		cout << "[sendLength]: Sending = " << binary.substr(i, 3) << endl;
 		drv.setRegister(&PORTA, stoi(binary.substr(i, 3)));
-		cout << "[sendLength]: i = " << i << endl;
 		drv.delay_ms(500);
 	}
 }
