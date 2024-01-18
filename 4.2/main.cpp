@@ -3,7 +3,7 @@
 int main()
 {
 	B15F &drv = B15F::getInstance();
-	ofstream out("empfangeneSaetze.txt");
+	ofstream out("historyReceived.txt");
 	bool running = true;
 
 	while (running)
@@ -52,7 +52,7 @@ int main()
 /* int main()
 {
 	string sentence;
-	ofstream out("empfangeneSaetze.txt");
+	ofstream out("historyReceived.txt");
 	if (std::getline(cin, sentence))
 	{
 		if (sentence == "")
@@ -215,20 +215,9 @@ int binaryToDecimal(const string binary)
 	return decimal;
 }
 
-// Bei einer geraden Anzahl an '1' wird das MSB (9. Bit) == 0,
-// bei einer ungeraden Anzahl wird MSB == 1
-bool checkForParity(const string binary)
-{
-	int count = 0;
-	for (long unsigned int i = 1; i < binary.length(); i++)
-		if (binary.at(i) == 1)
-			count++;
-	return (count % 2 == 0) == (binary.at(0) == '0');
-}
-
 void printSentenceToTxt(const string sentence, ofstream &out)
 {
 	out << sentence;
 	out << "\n";
-	cout << "[printSentenceToTxt]: Satz wurde in empfangeneSaetze.txt geschrieben" << endl;
+	cout << "[printSentenceToTxt]: Satz wurde in txt geschrieben" << endl;
 }
