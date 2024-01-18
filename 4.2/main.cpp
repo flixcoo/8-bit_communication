@@ -52,10 +52,11 @@ int main()
 /* int main()
 {
 	string sentence;
+	ofstream out("empfangeneSaetze.txt");
 	if (std::getline(cin, sentence))
 	{
 		if (sentence == "")
-			receiveMode(drv);
+			printSentenceToTxt(receiveMode(drv), out);
 		else
 		{
 			cout << "[System]: Erkannte Eingabe = " << sentence << endl;
@@ -64,6 +65,7 @@ int main()
 			sendSentence(charVector, drv);
 		}
 	}
+	out.close();
 } */
 
 void sendEscape(B15F &drv)
