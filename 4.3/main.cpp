@@ -101,7 +101,7 @@ void sendSentence(const vector<char> charVector, B15F &drv)
 	for (char character : charVector)
 	{
 		string binary = bitset<9>((int)character).to_string();
-		correctParity(binary);
+		setParity(binary);
 		for (long unsigned int i = 0; i < binary.length(); i += 3)
 		{
 			drv.setRegister(&PORTA, stoi(binary.substr(i, 3)));
@@ -187,7 +187,7 @@ string receiveSentence(B15F &drv, const int sentenceLength)
 		string numAsBinary = "";
 		for (unsigned long int j = 0; j < 3; j++) // for-Schleife für die einzelnen 3 Teile jedes  Zeichens
 			numAsBinary += bitset<3>(receivedNumsVector.at(i + j)).to_string();
-		if(!checkForParity(numAsBinary))
+		if(!checkParity(numAsBinary))
 			cout << "[receiveSentence]: Parität verletzt - Char [" << binaryToChar(numAsBinary) << "]" << endl;
 		else
 			cout << "[receiveSentence]: Parität bestätigt - Char [" << binaryToChar(numAsBinary) << "]" << endl;
@@ -222,22 +222,22 @@ int binaryToDecimal(const string binary)
 
 // Bei einer geraden Anzahl an '1' wird das MSB (9. Bit) == 0,
 // bei einer ungeraden Anzahl wird MSB == 1
-bool checkForParity(const string binary)
+bool checkParity(const string binary)
 {
 	int count = 0;
 	for (long unsigned int i = 1; i < binary.length(); i++)
-		if (binary.at(i) == 1)
+		if (binary.at(i) == '1')
 			count++;
 	return (count % 2 == 0) == (binary.at(0) == '0');
 }
 
-string correctParity(string &binary)
+string setParity(string &binary)
 {
 	int count = 0;
 	for (long unsigned int i = 1; i < binary.length(); i++)
-		if (binary.at(i) == 1)
+		if (binary.at(i) == '1')
 			count++;
-	binary.at(0) = (count % 2 == 0) ? 1 : 0;
+	binary.at(0) = (count % 2 == 0) ? '0' : '1';
 	return binary;
 }
 

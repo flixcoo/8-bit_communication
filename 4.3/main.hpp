@@ -21,6 +21,6 @@ string receiveSentence(B15F&, const int);
 vector<char> dissectString(const string);
 char binaryToChar(const string);
 int binaryToDecimal(const string);
-bool checkForParity(const string);
-string correctParity(string &binary);
+bool checkParity(const string);
+string setParity(string &binary);
 void printSentenceToTxt(const string, ofstream&);
