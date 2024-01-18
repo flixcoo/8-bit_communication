@@ -153,7 +153,7 @@ int receiveLength(B15F &drv)
 {
 	vector<int> sentenceLengthVector;
 	cout << "[receiveLength]: Länge wird empfangen..." << endl;
-	for (int i = 0; i < 3; i++) // Gleichung damit das letzte Zeichen mit gezählt wird
+	for (int i = 0; i < 3; i++)
 	{
 		drv.delay_ms(500);
 		sentenceLengthVector.push_back((int)drv.getRegister(&PINA));
@@ -171,7 +171,7 @@ string receiveSentence(B15F &drv, const int sentenceLength)
 {
 	vector<int> receivedNumsVector;
 	cout << "[receiveSentence]: Satz wird empfangen..." << endl;
-	for (int i = 0; i < sentenceLength * 3; i++) // sentenceLength * 3 = Anzahl an Zeichen die empfangen werden
+	for (int i = 0; i < sentenceLength * 3; i++) // sentenceLength * 3 = Number of characters received
 	{
 		drv.delay_ms(500);
 		receivedNumsVector.push_back((int)drv.getRegister(&PINA));
@@ -181,11 +181,10 @@ string receiveSentence(B15F &drv, const int sentenceLength)
 	}
 
 	string sentence;
-	// for-Schleife für die 3er Pakete
-	for (unsigned long int i = 0; i < receivedNumsVector.size(); i += 3)
+	for (unsigned long int i = 0; i < receivedNumsVector.size(); i += 3)//all received nums
 	{
 		string numAsBinary = "";
-		for (unsigned long int j = 0; j < 3; j++) // for-Schleife für die einzelnen 3 Teile jedes  Zeichens
+		for (unsigned long int j = 0; j < 3; j++)//character three-sets
 			numAsBinary += bitset<3>(receivedNumsVector.at(i + j)).to_string();
 		if(!checkParity(numAsBinary))
 			cout << "[receiveSentence]: Parität verletzt - Char [" << binaryToChar(numAsBinary) << "]" << endl;
@@ -220,8 +219,8 @@ int binaryToDecimal(const string binary)
 	return decimal;
 }
 
-// Bei einer geraden Anzahl an '1' wird das MSB (9. Bit) == 0,
-// bei einer ungeraden Anzahl wird MSB == 1
+// With an even number of '1', the MSB == 0,
+// with an odd number, MSB == 1
 bool checkParity(const string binary)
 {
 	int count = 0;
