@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <b15f/b15f.h>
 #include <vector>
 #include <string>
@@ -11,7 +12,7 @@ void sendLength(int, B15F&);
 void sendSentence(vector<char>, B15F&);
 
 //Receiveing Functions
-void receiveMode(B15F&);
+string receiveMode(B15F&);
 bool checkEscape(B15F&);
 int receiveLength(B15F&);
 string receiveSentence(B15F&, const int);
@@ -21,3 +22,4 @@ vector<char> dissectString(const string);
 char binaryToChar(const string);
 int binaryToDecimal(const string);
 bool checkForParity(const string);
+void printSentenceToTxt(const string, ofstream&);

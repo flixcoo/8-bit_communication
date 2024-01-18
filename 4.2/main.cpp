@@ -1,20 +1,9 @@
 #include "main.hpp"
-#include <fstream>
-#include <string>
-#include <iostream>
-void printSentenceToTxt(const string);
-
-void printSentenceToTxt(const string sentence)
-{
-	ofstream out("empfangeneSaetze.txt");
-	out << sentence + "\n";
-    out.close();
-	cout << "[printSentenceToTxt]: Satz wurde in txt geschrieben" << endl;
-}
 
 int main()
 {
 	B15F &drv = B15F::getInstance();
+	ofstream out("empfangeneSaetze.txt");
 	bool running = true;
 
 	while (running)
@@ -27,7 +16,7 @@ int main()
 		if ((!cin.fail()) && (decision < 3 && decision > -1))
 		{
 			if (!decision)
-				receiveMode(drv);
+				printSentenceToTxt(receiveMode(drv), out);
 			if (decision)
 			{
 				if (decision == 2)
@@ -53,6 +42,7 @@ int main()
 			cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 		}
 	}
+	out.close();
 	cout << endl
 		 << "[System]: Programm beendet" << endl
 		 << endl;
@@ -118,7 +108,7 @@ void sendSentence(const vector<char> charVector, B15F &drv)
 	}
 }
 
-void receiveMode(B15F &drv)
+string receiveMode(B15F &drv)
 {
 	cout << "[receiveMode]: Modus - Empfangen" << endl;
 	drv.setRegister(&DDRA, 0x00);
@@ -130,7 +120,7 @@ void receiveMode(B15F &drv)
 	int sentenceLength = receiveLength(drv);
 	string sentence = receiveSentence(drv, sentenceLength);
 	cout << "[receiveMode]: Empfangener Satz = " << sentence << endl;
-	printSentenceToTxt(sentence);
+	return sentence;
 }
 
 bool checkEscape(B15F &drv)
@@ -232,4 +222,11 @@ bool checkForParity(const string binary)
 		if (binary.at(i) == 1)
 			count++;
 	return (count % 2 == 0) == (binary.at(0) == '0');
+}
+
+void printSentenceToTxt(const string sentence, ofstream &out)
+{
+	out << sentence;
+	out << "\n";
+	cout << "[printSentenceToTxt]: Satz wurde in empfangeneSaetze.txt geschrieben" << endl;
 }
