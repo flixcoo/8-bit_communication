@@ -1,4 +1,16 @@
 #include "main.hpp"
+#include <fstream>
+#include <string>
+#include <iostream>
+void printSentenceToTxt(const string);
+
+void printSentenceToTxt(const string sentence)
+{
+	ofstream out("empfangeneSaetze.txt");
+	out << sentence + "\n";
+    out.close();
+	cout << "[printSentenceToTxt]: Satz wurde in txt geschrieben" << endl;
+}
 
 int main()
 {
@@ -118,6 +130,7 @@ void receiveMode(B15F &drv)
 	int sentenceLength = receiveLength(drv);
 	string sentence = receiveSentence(drv, sentenceLength);
 	cout << "[receiveMode]: Empfangener Satz = " << sentence << endl;
+	printSentenceToTxt(sentence);
 }
 
 bool checkEscape(B15F &drv)
