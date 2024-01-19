@@ -10,7 +10,7 @@ int main()
 	{
 		int decision;
 		cout << endl
-			 << "Was mˆchten Sie tun?\n[0] Empfangen\n[1] Senden\n[2] Exit" << endl;
+			 << "Was m√∂chten Sie tun?\n[0] Empfangen\n[1] Senden\n[2] Exit" << endl;
 		cin >> decision;
 
 		if ((!cin.fail()) && (decision < 3 && decision > -1))
@@ -23,15 +23,10 @@ int main()
 					running = false;
 				else
 				{
-					string sentence;
-					cout << "Bitte geben Sie einen Satz zum Senden ein:" << endl;
-					cin.ignore();
-					getline(cin, sentence);
-					cout << "[System]: Erkannte Eingabe = \"" << sentence << "\"" << endl;
-
-					vector<char> charVector = dissectString(sentence);
+					ifstream file("../BinDateien/200random.bin", ios::binary);
+    				vector<char> binaryData((istreambuf_iterator<char>(file)), {}); //jedes Element aus binaryData entspricht einem Byte aus der bin√§ren Datei
 					sendEscape(drv);
-					sendSentence(charVector, drv);
+					sendSentence(binaryData, drv);
 				}
 			}
 		}
@@ -68,6 +63,8 @@ int main()
 	out.close();
 } */
 
+
+
 void sendEscape(B15F &drv)
 {
 	drv.setRegister(&DDRA, 0x07);
@@ -83,14 +80,14 @@ void sendEscape(B15F &drv)
 
 void sendLength(const int length, B15F &drv)
 {
-	cout << "[sendLength]: L‰nge wird gesendet..." << endl;
+	cout << "[sendLength]: L√§nge wird gesendet..." << endl;
 	string lengthBinary = bitset<9>(length).to_string();
 	for (long unsigned int i = 0; i < lengthBinary.length(); i += 3)
 	{
 		drv.setRegister(&PORTA, stoi(lengthBinary.substr(i, 3)));
 		drv.delay_ms(500);
 	}
-	cout << "[sendLength]: L‰nge gesendet!" << endl;
+	cout << "[sendLength]: L√§nge gesendet!" << endl;
 }
 
 void sendSentence(const vector<char> charVector, B15F &drv)
@@ -101,7 +98,6 @@ void sendSentence(const vector<char> charVector, B15F &drv)
 	for (char character : charVector)
 	{
 		string binary = bitset<9>((int)character).to_string();
-		setParity(binary);
 		for (long unsigned int i = 0; i < binary.length(); i += 3)
 		{
 			drv.setRegister(&PORTA, stoi(binary.substr(i, 3)));
@@ -152,8 +148,8 @@ bool checkEscape(B15F &drv)
 int receiveLength(B15F &drv)
 {
 	vector<int> sentenceLengthVector;
-	cout << "[receiveLength]: L‰nge wird empfangen..." << endl;
-	for (int i = 0; i < 3; i++)
+	cout << "[receiveLength]: L√§nge wird empfangen..." << endl;
+	for (int i = 0; i < 3; i++) // Gleichung damit das letzte Zeichen mit gez√§hlt wird
 	{
 		drv.delay_ms(500);
 		sentenceLengthVector.push_back((int)drv.getRegister(&PINA));
@@ -163,7 +159,7 @@ int receiveLength(B15F &drv)
 	for (long unsigned int i = 0; i < sentenceLengthVector.size(); i++)
 		sentenceLengthInBinary += bitset<3>(sentenceLengthVector.at(i)).to_string();
 
-	cout << "[receiveLength]: Empfangene L‰nge (Bin‰r) = " << sentenceLengthInBinary << endl;
+	cout << "[receiveLength]: Empfangene L√§nge (Bin√§r) = " << sentenceLengthInBinary << endl;
 	return binaryToDecimal(sentenceLengthInBinary);
 }
 
@@ -171,28 +167,25 @@ string receiveSentence(B15F &drv, const int sentenceLength)
 {
 	vector<int> receivedNumsVector;
 	cout << "[receiveSentence]: Satz wird empfangen..." << endl;
-	for (int i = 0; i < sentenceLength * 3; i++) // sentenceLength * 3 = Number of characters received
+	for (int i = 0; i < sentenceLength * 3; i++) // sentenceLength * 3 = Anzahl an Zeichen die empfangen werden
 	{
 		drv.delay_ms(500);
 		receivedNumsVector.push_back((int)drv.getRegister(&PINA));
 		cout << "[receiveSentence]: Zahl empfangen [" << receivedNumsVector.at(i) << "]" << endl;
 		if(i % 3 == 0 && i != 0)
-			cout << "[receiveSentence]: Character vollst‰ndig empfangen" << endl;
+			cout << "[receiveSentence]: Character vollst√§ndig empfangen" << endl;
 	}
 
 	string sentence;
-	for (unsigned long int i = 0; i < receivedNumsVector.size(); i += 3)//all received nums
+	// for-Schleife f√ºr die 3er Pakete
+	for (unsigned long int i = 0; i < receivedNumsVector.size(); i += 3)
 	{
 		string numAsBinary = "";
-		for (unsigned long int j = 0; j < 3; j++)//character three-sets
+		for (unsigned long int j = 0; j < 3; j++) // for-Schleife f√ºr die einzelnen 3 Teile jedes  Zeichens
 			numAsBinary += bitset<3>(receivedNumsVector.at(i + j)).to_string();
-		if(!checkParity(numAsBinary))
-			cout << "[receiveSentence]: Parit‰t verletzt - Char [" << binaryToChar(numAsBinary) << "]" << endl;
-		else
-			cout << "[receiveSentence]: Parit‰t best‰tigt - Char [" << binaryToChar(numAsBinary) << "]" << endl;
 		sentence += binaryToChar(numAsBinary);
 	}
-	cout << "[receiveSentence]: Satz vollst‰ndig empfangen" << endl;
+	cout << "[receiveSentence]: Satz vollst√§ndig empfangen" << endl;
 	return sentence;
 }
 
@@ -219,33 +212,9 @@ int binaryToDecimal(const string binary)
 	return decimal;
 }
 
-// With an even number of '1', the MSB == 0,
-// with an odd number, MSB == 1
-bool checkParity(const string binary)
-{
-	int count = 0;
-	for (long unsigned int i = 1; i < binary.length(); i++)
-		if (binary.at(i) == '1')
-			count++;
-	return (count % 2 == 0) == (binary.at(0) == '0');
-}
-
-string setParity(string &binary)
-{
-	int count = 0;
-	for (long unsigned int i = 1; i < binary.length(); i++)
-		if (binary.at(i) == '1')
-			count++;
-	binary.at(0) = (count % 2 == 0) ? '0' : '1';
-	return binary;
-}
-
 void printSentenceToTxt(const string sentence, ofstream &out)
 {
 	out << sentence;
 	out << "\n";
 	cout << "[printSentenceToTxt]: Satz wurde in txt geschrieben" << endl;
 }
-
-
-
