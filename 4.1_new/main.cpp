@@ -24,10 +24,10 @@ int RECEIVING_CYCLE = 100;
 int main(){
     B15F &drv = B15F::getInstance();
     drv.setRegister(&DDRA, 0x00);
-    assignPC(drv);
     
-    int a = (int)drv.getRegister(&PINA);
-    
+    int a = drv.getRegister(&PINA);
+
+    //assignPC(drv);
     bool running = true;
     while (running)
     {
@@ -66,7 +66,7 @@ int main(){
     
 }
 
-void assignPC(B15F drv){
+void assignPC(B15F drv){ //bereitet Probleme
     uint8_t initialSignal = drv.getRegister(&PINA);
     
     if(initialSignal == 0){
@@ -88,7 +88,8 @@ void assignPC(B15F drv){
 //1111 - Übertragung beendet
 
 bool checkIfStartSign(B15F &drv){
-    if(drv.getRegister(&PINA) == START_SIGN)
+    cout << (unsigned int)drv.getRegister(&PINA) << endl;
+    if((int)drv.getRegister(&PINA) == 4)
         return true;
     return false;
 }
@@ -109,7 +110,10 @@ void revieceChar(B15F &drv)
 {
     cout << "test1" << endl;
     while (!checkIfStartSign(drv))
+    {
         cout << "checkIfSending = false" << endl;
+        drv.delay_ms(RECEIVING_CYCLE);
+    }
     cout << "checkIfSending = false" << endl;
 
     vector<uint8_t> buffer;
@@ -132,6 +136,7 @@ void revieceChar(B15F &drv)
     cout << "buffer: " << s << endl;
 }
 void sendStartSign(B15F &drv){
+    cout << "Startzeichen gesendet: " << (unsigned int)START_SIGN << endl;
     drv.setRegister(&PORTA, START_SIGN);
     drv.delay_ms(SENDING_CYCLE);
 }
@@ -140,6 +145,7 @@ void sendStopSign(B15F &drv){
     drv.setRegister(&PORTA, STOP_SIGN);
     drv.delay_ms(SENDING_CYCLE);
 }
+
 void sendChar(const char c, B15F &drv)
 {
     string binary = bitset<9>((int)c).to_string();
@@ -153,7 +159,7 @@ void sendChar(const char c, B15F &drv)
         drv.delay_ms(SENDING_CYCLE);
     }
     sendStopSign(drv);
-}
+} 
 
 // char binaryToChar(const string binary)
 // {
