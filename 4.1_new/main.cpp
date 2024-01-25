@@ -1,49 +1,43 @@
 #include "main.hpp"
 
-int PC_ID = 5;
-int aFinalVar = 0;
-uint8_t STOP_SIGN = 0b1111;
-uint8_t START_SIGN = 0b1000;
-uint8_t SAME_SIGN = 0b1001;
-int SENDING_CYCLE = 300;
-int RECEIVING_CYCLE = 100;
+int PC_ID;
+uint8_t const START_SIGN =  0b00001000;
+uint8_t const STOP_SIGN =   0b00001001;
+uint8_t const ACK_SIGN =    0b00001010;
+uint8_t const DEN_SIGN =    0b00001011;
+int const SENDING_CYCLE = 300;
+int const RECEIVING_CYCLE = 100;
+uint8_t tact = 0;
+uint8_t prevTact = 0;
 
-// int main(){
-//     B15F &drv = B15F::getInstance();
-//     while(1){
-//         drv.setRegister(&DDRA, 0x00);
-//         //string binary = bitset<3>(drv.getRegister(&PINA)).to_string();
-//         //cout << "Binary: " << binary << endl;
-//         uint8_t data = (drv.getRegister(&PINA) & 0x03);
-//         std::cout << "bekommen: " << std::bitset<8>(data) << " bzw.: x" << (unsigned int)data << std::endl;
-//         drv.delay_ms(200);
-//     }
-//}
-//void assignPC(B15F&);
 
 int main(){
     B15F &drv = B15F::getInstance();
-    drv.setRegister(&DDRA, 0x00);
-    
-    int a = drv.getRegister(&PINA);
-
-    //assignPC(drv);
+	//assignPC(drv);	
+	 
     bool running = true;
+    sending(drv, 'a');
     while (running)
     {
         int decision;
         cout << endl
-             << "Was möchten Sie tun?\n[0] Empfangen\n[1] Senden\n[2] Exit" << endl;
+             << "Was möchten Sie tun?\n[0] PC-0\n[1] PC-1\n[2] Exit" << endl;
         cin >> decision;
 
         if ((!cin.fail()) && (decision < 3 && decision > -1))
         {
             if(!decision)
                 {
-                    cout << "test1" << endl;
-                    cout << "test4" << endl;
-                    revieceChar(drv);
-                    cout << "test3" << endl;
+                	//PC-0
+                    drv.setRegister(&DDRA, 0x0F);
+                    PC_ID = 0;
+                    cout << "[Sytem]: PC auf PC-" << PC_ID << " gesetzt." << endl;
+                    drv.setRegister(&PORTA, sendConverting(4));
+                    while(1){
+                        cout << (long int) reveiceConverting(drv.getRegister(&PINA)) << endl;
+                        cout << bitset<8>(drv.getRegister(&PINA)) << endl;
+                        drv.delay_ms(500);
+                    }
                 }
             if (decision)
             {
@@ -51,10 +45,16 @@ int main(){
                     running = false;
                 else
                 {
-                    cout << "Bitte geben Sie einen Zeichen zum Senden ein:" << endl;
-                    char c;
-                    cin >> c;
-                    sendChar(c, drv);
+                    //PC-1
+                    drv.setRegister(&DDRA, 0xF0);
+                    PC_ID = 1;
+                    cout << "[Sytem]: PC auf PC-" << PC_ID << " gesetzt." << endl;
+                    drv.setRegister(&PORTA, sendConverting(6));
+                    while(1){
+                        cout << (long int) reveiceConverting(drv.getRegister(&PINA)) << endl;
+                        cout << bitset<8>(drv.getRegister(&PINA)) << endl;
+                        drv.delay_ms(500);
+                    }
                 }
             }
         }
@@ -63,109 +63,86 @@ int main(){
         cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     }
     cout << endl << "[System]: Programm beendet" << endl << endl;
-    
 }
 
-void assignPC(B15F drv){ //bereitet Probleme
+void assignPC(B15F &drv){ //bereitet Probleme
     uint8_t initialSignal = drv.getRegister(&PINA);
     
-    if(initialSignal == 0){
+    if(initialSignal == 0){ 
         drv.setRegister(&DDRA, 0x0F);
         drv.setRegister(&PORTA, 0b0001);
-        PC_ID = 1;
+        PC_ID = 0;
         cout << "[Sytem]: PC auf PC-" << PC_ID << " gesetzt." << endl;
     }
     else{
         drv.setRegister(&DDRA, 0xF0);
         drv.setRegister(&PORTA, 0b0000);
-        PC_ID = 2;
-        cout << "[Sytem]: PC auf PC-" << PC_ID << " gesetzt." << endl;
+        PC_ID = 1;
+        cout << "[System]: PC auf PC-" << PC_ID << " gesetzt." << endl;
     }
 }
-//Steuerzeichen
-//1000 - Es wird gesendet
-//1001 - Das letzte Zeichen doppelt
-//1111 - Übertragung beendet
 
-bool checkIfStartSign(B15F &drv){
-    cout << (unsigned int)drv.getRegister(&PINA) << endl;
-    if((int)drv.getRegister(&PINA) == 4)
-        return true;
-    return false;
+/**
+* Diese Methode nutzt die gesetzte Nummer des PCs um anhand dieser
+* eine Zahl so umzuwandeln, dass diese richtig über das Board gesendet
+* wird. Die PC_ID kennzeichnet hier, wie das Registers des Boards an diesem
+* PC gesetzt wurde. Da bei einem 0xF0-Register eine Binärzahl 1011 nicht gesendet werden
+* würde, da die ersten 4 Bits nicht zum senden verwendet werden können, muss in diesem Fall
+* die Zahl um 4 Bits nach links geshifted werden. Das Ergebnis ist dann 10110000, welches 
+* dann vom Board richtig als 1011 gesendet wird.
+*
+* @param  drv  Eine Referenz des Boards
+* @param  num  Die jeweilige Zahl, die konvertiert werden soll
+* @return      Die Zahl konvertiert für die jeweilige PC-Nummer
+*/
+uint8_t sendConverting(uint8_t num){
+    if(PC_ID == 1)
+        return (num << 4);
+    return num;
 }
 
-bool checkIfStopSign(B15F &drv){
-    if(drv.getRegister(&PINA) == STOP_SIGN)
-        return true;
-    return false;
+/**
+* Diese Methode nutzt die gesetzte Nummer des PCs um anhand dieser
+* eine Zahl so umzuwandeln, dass die über das Board übertragene Nummer
+* richtig benutzt wird. Die PC_ID kennzeichnet hier, wie das Registers des Boards an diesem
+* PC gesetzt wurde. Da bei einem 0xF0-Register eine Binärzahl 1011 als 10110000 ankommen würde,
+* muss diese erst durch einen Shift von 4 Bits nach rechts in Ihre ursprüngliche Zahl konvertiert werden.
+*
+* @param  drv  Eine Referenz des Boards
+* @param  num  Die jeweilige Zahl, die konvertiert werden soll
+* @return      Die Zahl konvertiert für die jeweilige PC-Nummer
+*/
+uint8_t reveiceConverting(uint8_t num){
+    if(PC_ID == 0) //0x0F
+        return (num >> 4);
+    return (num & 0x0F); //0xF0
 }
 
-bool checkIfSameSign(B15F &drv){
-    if(drv.getRegister(&PINA) == SAME_SIGN)
-        return true;
-    return false;
+void sending(B15F &drv, char c){
+    uint8_t num = c;
+    cout << "num: " << (long int) num << endl << "Bitset: " << bitset<8>(num) << endl;
+    
+    if(tact == prevTact)
+        tact = !prevTact;
+
+    vector<uint8_t> binarysAsVector = dissectBinary(num);
+    for(uint8_t i : binarysAsVector)
+        cout << "[" << (long int) i << "] ";
+    cout << endl;
+
+    prevTact = tact;
 }
 
-void revieceChar(B15F &drv)
+uint8_t addTactToPackage(uint8_t num){
+    if(tact == 1)
+        return num | 0b00000100;
+    return num & 11111011;
+}
+
+vector<uint8_t> dissectBinary(uint8_t num)
 {
-    cout << "test1" << endl;
-    while (!checkIfStartSign(drv))
-    {
-        cout << "checkIfSending = false" << endl;
-        drv.delay_ms(RECEIVING_CYCLE);
-    }
-    cout << "checkIfSending = false" << endl;
-
-    vector<uint8_t> buffer;
-    uint8_t prevToken = START_SIGN;
-    while(!checkIfStopSign(drv)){
-        if(!(drv.getRegister(&PINA) == prevToken)) //Aktuelles Zeichen ist ein neues Zeichen
-            if(drv.getRegister(&PINA) == SAME_SIGN) //Aktuelles Zeichen ist die SAME_SIGN Konstante
-            {
-                prevToken = SAME_SIGN; //prevToken wird SAME_SIGN, dieses wird aber nicht angehaengt
-            }
-            else{
-                prevToken = drv.getRegister(&PINA); //prevToken wird das neue Zeichen
-                buffer.push_back(prevToken); //neues Zeichen wird an den Vector angehaengt
-            }
-        drv.delay_ms(RECEIVING_CYCLE);
-    }
-    string s;
-    for(int i : buffer) 
-        s += buffer.at(i);
-    cout << "buffer: " << s << endl;
+    vector<uint8_t> binarysAsVector;
+    for(long unsigned int i = 0; i < 4; i++)
+        binarysAsVector.push_back(3 & (num >> i*2));
+    return binarysAsVector;
 }
-void sendStartSign(B15F &drv){
-    cout << "Startzeichen gesendet: " << (unsigned int)START_SIGN << endl;
-    drv.setRegister(&PORTA, START_SIGN);
-    drv.delay_ms(SENDING_CYCLE);
-}
-
-void sendStopSign(B15F &drv){
-    drv.setRegister(&PORTA, STOP_SIGN);
-    drv.delay_ms(SENDING_CYCLE);
-}
-
-void sendChar(const char c, B15F &drv)
-{
-    string binary = bitset<9>((int)c).to_string();
-    cout << "Wert: " << c << endl
-         << "Binary: " << binary << endl; // Debug
-
-    sendStartSign(drv);
-    for (long unsigned int i = 0; i < binary.length(); i += 3)
-    {
-        drv.setRegister(&PORTA, stoi(binary.substr(i, 3)));
-        drv.delay_ms(SENDING_CYCLE);
-    }
-    sendStopSign(drv);
-} 
-
-// char binaryToChar(const string binary)
-// {
-// 	char c = 0;
-// 	for (long unsigned int i = 0; i < binary.length(); i++)
-// 		if ('1' == binary.at(i))
-// 			c += (int)pow(2, 8 - i);
-// 	return c;
-// }
