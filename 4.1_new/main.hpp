@@ -5,19 +5,22 @@
 
 using namespace std;
 
-void sendEscape(B15F&);
-void sendChar(char, B15F&);
-bool checkIfStartSign(B15F&);
-bool checkIfStopSign(B15F&);
-void revieceChar(B15F&);
-char binaryToChar(const string);
-void sendStartSign(B15F&);
-void sendStopSign(B15F&);
+//Process
 void assignPC(B15F&);
-void sendChar(B15F&);
+void sending(B15F&, vector<vector<uint8_t>>);
+vector<vector<uint8_t>> receiving(B15F&);
 
+//Helper
+vector<uint8_t> dissectBinary(uint8_t);
+vector<uint8_t> createBinaryVector(uint8_t);
+vector<vector<uint8_t>> createSentenceVector(const string);
 uint8_t sendConverting(uint8_t);
 uint8_t reveiceConverting(uint8_t);
-void sending(B15F&, char);
-uint8_t addTactToPackage(uint8_t);
-vector<uint8_t> dissectBinary(uint8_t);
+int countOnes(uint8_t);
+bool isEven(int);
+void setParity(vector<vector<uint8_t>>&);
+
+//Debug
+void leitungstest(B15F&);
+void clearLeitung(B15F&);
+void print2dVector(vector<vector<uint8_t>>);
