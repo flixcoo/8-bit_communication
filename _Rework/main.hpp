@@ -18,7 +18,9 @@ uint8_t sendConverting(uint8_t);
 uint8_t reveiceConverting(uint8_t);
 int countOnes(uint8_t);
 bool isEven(int);
-void setParity(vector<vector<uint8_t>>&);
+vector<vector<uint8_t>> setParity(vector<vector<uint8_t>>&);
+bool checkParity(vector<uint8_t>);
+void removeParity(vector<uint8_t>&);
 
 //Debug
 void leitungstest(B15F&);

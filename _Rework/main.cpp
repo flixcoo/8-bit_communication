@@ -9,25 +9,31 @@ uint8_t const DEN_SIGN = 0b00001001;
 // uint8_t const X_SIGN =    0b00001100;
 // uint8_t const Y_SIGN =    0b00001101;
 // uint8_t const Z_SIGN =    0b00001110;
-int const SENDING_CYCLE_TIME = 1000;
-int const RECEIVING_CYCLE_TIME = 500;
+int const SENDING_CYCLE_TIME = 3000;
+int const RECEIVING_CYCLE_TIME = 1000;
 
 int main(){
     B15F &drv = B15F::getInstance();
     bool running = true;
     
-    string s = "ABC";
+    string s = "T";
     vector<vector<uint8_t>> sentenceVector = createSentenceVector(s);
+    cout << "======= Vector =======" << endl;
     print2dVector(sentenceVector);
-
-
+    cout << "=== Parität setzen ===" << endl;
+    setParity(sentenceVector);
+    print2dVector(sentenceVector);
+    cout << "Parität: " << (bool)checkParity(sentenceVector.at(0)) << endl;
+    cout << "= Parität entfernen ==" << endl;
+    removeParity(sentenceVector.at(0));
+    print2dVector(sentenceVector);
+   
 
 
     while (running)
     {
         int decision;
-        cout << endl
-             << "Was moechten Sie tun?\n[0] PC-0\n[1] PC-1\n[2] Exit" << endl;
+        cout << endl << "Was moechten Sie tun?\n[0] PC-0\n[1] PC-1\n[2] Exit" << endl;
         cin >> decision;
         cin.clear();
         cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
@@ -97,14 +103,14 @@ void assignPC(B15F &drv){
  * eine Zahl so umzuwandeln, dass diese richtig ueber das Board gesendet
  * wird. Die PC_ID kennzeichnet hier, wie das Registers des Boards an diesem
  * PC gesetzt wurde. Da bei einem 0xF0-Register eine Binaerzahl 1011 nicht
- * gesendet werden würde, da die ersten 4 Bits nicht zum senden verwendet werden
- * können, muss in diesem Fall die Zahl um 4 Bits nach links geshifted werden.
+ * gesendet werden w├╝rde, da die ersten 4 Bits nicht zum senden verwendet werden
+ * k├╢nnen, muss in diesem Fall die Zahl um 4 Bits nach links geshifted werden.
  * Das Ergebnis ist dann 10110000, welches dann vom Board richtig als 1011
  * gesendet wird.
  *
  * @param  drv  Eine Referenz des Boards
  * @param  num  Die jeweilige Zahl, die konvertiert werden soll
- * @return      Die Zahl konvertiert für die jeweilige PC-Nummer
+ * @return      Die Zahl konvertiert f├╝r die jeweilige PC-Nummer
  */
 uint8_t sendConverting(uint8_t num){
     if (PC_ID == 1)
@@ -114,15 +120,15 @@ uint8_t sendConverting(uint8_t num){
 
 /**
  * Diese Methode nutzt die gesetzte Nummer des PCs um anhand dieser
- * eine Zahl so umzuwandeln, dass die über das Board übertragene Nummer
+ * eine Zahl so umzuwandeln, dass die ├╝ber das Board ├╝bertragene Nummer
  * richtig benutzt wird. Die PC_ID kennzeichnet hier, wie das Registers des
- * Boards an diesem PC gesetzt wurde. Da bei einem 0xF0-Register eine Binärzahl
- * 1011 als 10110000 ankommen würde, muss diese erst durch einen Shift von 4
- * Bits nach rechts in Ihre ursprüngliche Zahl konvertiert werden.
+ * Boards an diesem PC gesetzt wurde. Da bei einem 0xF0-Register eine Bin├ñrzahl
+ * 1011 als 10110000 ankommen w├╝rde, muss diese erst durch einen Shift von 4
+ * Bits nach rechts in Ihre urspr├╝ngliche Zahl konvertiert werden.
  *
  * @param  drv  Eine Referenz des Boards
  * @param  num  Die jeweilige Zahl, die konvertiert werden soll
- * @return      Die Zahl konvertiert für die jeweilige PC-Nummer
+ * @return      Die Zahl konvertiert f├╝r die jeweilige PC-Nummer
  */
 uint8_t reveiceConverting(uint8_t num){
     if (PC_ID == 0) // 0x0F
@@ -131,7 +137,7 @@ uint8_t reveiceConverting(uint8_t num){
 }
 
 void sending(B15F &drv, vector<vector<uint8_t>> sentenceVector){
-
+    setParity(sentenceVector);
     for (unsigned int i = 0; i < sentenceVector.size(); i++){ //Satz beginnt
         drv.setRegister(&PORTA, sendConverting(START_SIGN)); // Startzeichen senden
         cout << "[sending]: START_SIGN gesendet" << endl;
@@ -190,11 +196,18 @@ vector<vector<uint8_t>> receiving(B15F &drv){
                     }
                 }
                 cout << "[receiving]: Ende" << endl; 
-                cout << "[receiving]: currentBitset = " << bitset<8>(currentBitset) << "(" << (long int) currentBitset << ")" << endl;
-                cout << "[receiving]: lastBitset = " << bitset<8>(lastBitset) << "(" << (long int) lastBitset << ")" << endl;
+                cout << "[receiving]: currentBitset = " << bitset<4>(currentBitset) << "(" << (long int) currentBitset << ")" << endl;
+                cout << "[receiving]: lastBitset = " << bitset<4>(lastBitset) << "(" << (long int) lastBitset << ")" << endl;
                 drv.delay_ms(RECEIVING_CYCLE_TIME);
             }
-            sentenceVector.push_back(binaryVector);
+            if(checkParity(binaryVector)){
+                drv.setRegister(&PORTA, sendConverting(ACK_SIGN));
+                removeParity(binaryVector);
+                sentenceVector.push_back(binaryVector);
+            }
+            else{
+                drv.setRegister(&PORTA, sendConverting(DEN_SIGN));
+            }
         }
         cout << "[receiving]: currentBitset != START_SIGN" << endl;
         drv.delay_ms(RECEIVING_CYCLE_TIME);
@@ -205,8 +218,11 @@ vector<vector<uint8_t>> receiving(B15F &drv){
 
 vector<uint8_t> createBinaryVector(uint8_t num){
     vector<uint8_t> binaryVector;
-    for (long unsigned int i = 0; i < 3; i++)
+    for (long unsigned int i = 0; i < 3; i++){
+        //cout << "num : " << bitset<8>(num) << endl;
+        //cout << "num umgeformt: " << bitset<8>(7 & (num >> (i * 3))) << endl;
         binaryVector.push_back(7 & (num >> (i * 3)));
+    }
     return binaryVector;
 }
 
@@ -217,18 +233,20 @@ vector<vector<uint8_t>> createSentenceVector(const string s){
     return sentenceVector;
 }
 
-void setParity(vector<vector<uint8_t>> &sentenceVector){
+vector<vector<uint8_t>> setParity(vector<vector<uint8_t>> &sentenceVector){
     for (unsigned int i = 0; i < sentenceVector.size(); i++){
         int count = 0;
         for (unsigned int j = 0; j < sentenceVector.at(i).size(); j++)
             count += countOnes(sentenceVector.at(i).at(j));
         if (!isEven(count))
-            sentenceVector.at(i).at(0) | 0b100;
+            (sentenceVector.at(i).at(2) |= 0b100);
     }
+    return sentenceVector;
 }
 
 int countOnes(uint8_t num){
     int count = 0;
+    
     while (num){
         count += (num & 1);
         num = num >> 1;
@@ -238,6 +256,23 @@ int countOnes(uint8_t num){
 
 bool isEven(int num){
     return num % 2 == 0;
+}
+
+bool checkParity(vector<uint8_t> binaryVector){
+    int count = 0;
+    for(unsigned int i = 0; i < binaryVector.size(); i++){
+        count += countOnes(binaryVector.at(i));
+    }
+    cout << "Count: " << count-1 << endl;
+    cout << "Parity: " << bitset<3>((binaryVector.at(2) & 0b100) >> 2) << endl;
+    
+    if(((binaryVector.at(2) & 0b100) >> 2) != isEven(count-1))
+        return true;
+    return false;
+}
+
+void removeParity(vector<uint8_t> &binaryVector){
+    binaryVector.at(2) &= 0b011;
 }
 
 void leitungstest(B15F &drv){
@@ -270,32 +305,11 @@ void leitungstest(B15F &drv){
 
     cin.ignore();
     drv.setRegister(&PORTA, sendConverting(0));
-
-
-}
-
-void clearLeitung(B15F &drv){
-        int decision;
-        cout << endl
-             << "Soll die Leitung auf 0 gesetzt werden?\n[0] Nein\n[1] Ja" << endl;
-        cin >> decision;
-
-        if (decision)
-        {    
-            drv.setRegister(&DDRA, 0xFF);
-            drv.setRegister(&PORTA, 0);
-            cout << "Leitung wurde auf 0 gesetzt" << endl;
-        }
-        
-        // skipping wrong inputs
-        cin.clear();
-        cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 }
 
 void print2dVector(vector<vector<uint8_t>> sentenceVector){
-    cout << "Vektorgr��en:  V1 = " << sentenceVector.size() << " V2 = " << sentenceVector.at(0).size() << endl;
     for (unsigned int i = 0; i < sentenceVector.size(); i++){
-        cout << "     |" << endl;
+        cout << "  |" << endl;
         for (unsigned int j = 0; j < sentenceVector.at(i).size(); j++)
             cout << "[" << bitset<3>(sentenceVector.at(i).at(j)) << "] ";
         cout << endl;
