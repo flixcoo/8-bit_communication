@@ -155,8 +155,13 @@ void sending(B15F &drv, vector<vector<uint8_t>> sentenceVector){
                     drv.setRegister(&PORTA, sendConverting(SAME_SIGN));
                     cout << "[sending]: SAME_SIGN gesendet" << endl;
                 }
-
             drv.delay_ms(SENDING_CYCLE_TIME);
+            if(reveiceConverting(drv.getRegister(&PINA)) == DEN_SIGN){
+                cout << "==== Übertragung fehlgeschlagen ====" << endl;
+                j =- 1;
+            }
+            else if(reveiceConverting(drv.getRegister(&PINA)) == ACK_SIGN)
+                cout << "==== Übertragung erfolgreich ====" << endl;
         }
     }
     drv.setRegister(&PORTA,sendConverting(STOP_SIGN)); // Stopzeichen senden (Uebertragung beendet)
