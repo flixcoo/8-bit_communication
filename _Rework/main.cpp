@@ -46,7 +46,7 @@ int main(){
         cout << "[System]: PC-ID = " << PC_ID << endl;
         drv.setRegister(&DDRA, 0xF0);
         //leitungstest(drv);
-        cout << "[Comm]: Waiting for Request" << endl;
+        cout << "[Comm]: Waiting for Request..." << endl;
         while(running){
             if(reveiceConverting(drv.getRegister(&PINA)) == REQ_SIGN){
                 drv.setRegister(&PORTA, sendConverting(ACK_SIGN));
