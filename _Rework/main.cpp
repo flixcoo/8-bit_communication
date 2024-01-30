@@ -1,6 +1,10 @@
 #include "main.hpp"
 
-//Cat <datei> | ./main.elf
+// Sende-PC
+// cat <datei> | ./main.elf
+// Empfangs-PC
+// ./main.elf
+
 int PC_ID;
 uint8_t const START_SIGN =  0b00001000;
 uint8_t const STOP_SIGN =   0b00001111;
