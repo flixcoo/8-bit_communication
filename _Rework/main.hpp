@@ -1,7 +1,10 @@
 #include <iostream>
+#include <unistd.h>
 #include <b15f/b15f.h>
 #include <vector>
 #include <array>
+#include <chrono>
+#include <ctime>
 
 using namespace std;
 
@@ -15,6 +18,7 @@ vector<vector<uint8_t>> setParity(vector<vector<uint8_t>>&);
 bool checkParity(vector<uint8_t>);
 void removeParity(vector<uint8_t>&);
 uint8_t mergeBitsets(vector<uint8_t>);
+bool sendRequest(B15F &drv);
 
 //Helper
 uint8_t sendConverting(uint8_t);

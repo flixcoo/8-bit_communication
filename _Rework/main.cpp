@@ -1,77 +1,69 @@
 #include "main.hpp"
 
+//Cat <datei> | ./main.elf
 int PC_ID;
-uint8_t const START_SIGN = 0b00001000;
-uint8_t const STOP_SIGN = 0b00001111;
-uint8_t const SAME_SIGN = 0b00001010;
-uint8_t const ACK_SIGN = 0b00001011;
-uint8_t const DEN_SIGN = 0b00001001;
-// uint8_t const X_SIGN =    0b00001100;
-// uint8_t const Y_SIGN =    0b00001101;
-// uint8_t const Z_SIGN =    0b00001110;
-int const SENDING_CYCLE_TIME_MS = 90;
-int const RECEIVING_CYCLE_TIME_MS = 30;
+uint8_t const START_SIGN =  0b00001000;
+uint8_t const STOP_SIGN =   0b00001111;
+uint8_t const SAME_SIGN =   0b00001010;
+uint8_t const ACK_SIGN =    0b00001011;
+uint8_t const DEN_SIGN =    0b00001001;
+uint8_t const REQ_SIGN =    0b00001100;
+// uint8_t const X_SIGN =    0b00001101;
+// uint8_t const Y_SIGN =    0b00001110;
+int const SENDING_CYCLE_TIME_MS = 300;
+int const RECEIVING_CYCLE_TIME_MS = 100;
+
 
 int main(){
+
     B15F &drv = B15F::getInstance();
     bool running = true;
+    ofstream outputFile;
+    outputFile.open("received.txt");
+    vector<vector<uint8_t>> sentenceVector;
     
-    string s = "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut l.";
-    vector<vector<uint8_t>> sentenceVector = createSentenceVector(s);
-    //printSentenceVector(sentenceVector);
+    auto current = std::chrono::system_clock::now();
+    std::time_t currentTime = std::chrono::system_clock::to_time_t(current);
+    
+    outputFile << ctime(&currentTime) << endl;
 
-    cout << "String s: ";
-    for(unsigned int i = 0; i < sentenceVector.size(); i++)
-        cout << mergeBitsets(sentenceVector.at(i));
-
-    while (running)
-    {
-        int decision;
-        cout << endl << "Was möchten Sie tun?\n[0] PC-0\n[1] PC-1\n[2] Exit" << endl;
-        cin >> decision;
+    if(!isatty(fileno(stdin))){
+        PC_ID = 0;
+        cout << "[System]: PC-ID = " << PC_ID << endl;
+        drv.setRegister(&DDRA, 0x0F);
         
-        if ((!cin.fail()) && (decision < 3 && decision > -1))
-        {
-            if (!decision)
-            {
-                cin.clear();
-                cin.ignore(numeric_limits<streamsize>::max(), '\n');
-
-                // PC-0
-                PC_ID = 0;
-                drv.setRegister(&DDRA, 0x0F);
-                cout << "PC-ID: " << PC_ID << endl;
-                leitungstest(drv);
-                sending(drv, sentenceVector);
-            }
-            if (decision)
-            {
-                if (decision == 2)
-                    running = false;
-                else
-                {
-                    cin.clear();
-                    cin.ignore(numeric_limits<streamsize>::max(), '\n');
-
-                    // PC-1
-                    PC_ID = 1;
-                    drv.setRegister(&DDRA, 0xF0);
-                    cout << "PC-ID: " << PC_ID << endl;
-                    leitungstest(drv);
-                    vector<vector<uint8_t>> sentenceVector = receiving(drv);
-                    
-                    cout << "===== Ausgabe =====" << endl;
-                    for(unsigned int i = 0; i < sentenceVector.size(); i++)
-                        cout << (char) mergeBitsets(sentenceVector.at(i));
-                    cout << endl;
-                }
-            }
+        //leitungstest(drv);
+        string inputString;
+        string line;
+        while(getline(cin, line)){
+            inputString += line;
         }
-        // skipping wrong inputs
-        cin.clear();
-        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        cout << "[System]: Input = " << inputString << endl;
+        sentenceVector = createSentenceVector(inputString);
+        if(sendRequest(drv))
+            sending(drv, sentenceVector);
     }
-    cout << endl << "[System]: Programm beendet" << endl << endl;
+    else{
+        PC_ID = 1;
+        cout << "[System]: PC-ID = " << PC_ID << endl;
+        drv.setRegister(&DDRA, 0xF0);
+        //leitungstest(drv);
+        cout << "[Comm]: Waiting for Request" << endl;
+        while(running){
+            if(reveiceConverting(drv.getRegister(&PINA)) == REQ_SIGN){
+                drv.setRegister(&PORTA, sendConverting(ACK_SIGN));
+                sentenceVector = receiving(drv);
+                running = false;
+            } 
+        }
+        cout << "Empfangen: ";
+        for(unsigned int i = 0; i < sentenceVector.size(); i++){
+            outputFile << mergeBitsets(sentenceVector.at(i));
+            cout << mergeBitsets(sentenceVector.at(i));
+        }
+        cout << endl;
+    }
+    outputFile.close();
 }
 
 //Funktioniert nur wenn Leitung am Anfang auf 0
@@ -101,14 +93,14 @@ void assignPC(B15F &drv){
  * eine Zahl so umzuwandeln, dass diese richtig ueber das Board gesendet
  * wird. Die PC_ID kennzeichnet hier, wie das Registers des Boards an diesem
  * PC gesetzt wurde. Da bei einem 0xF0-Register eine Binaerzahl 1011 nicht
- * gesendet werden würde, da die ersten 4 Bits nicht zum senden verwendet werden
+ * gesendet werden wuerde, da die ersten 4 Bits nicht zum senden verwendet werden
  * können, muss in diesem Fall die Zahl um 4 Bits nach links geshifted werden.
  * Das Ergebnis ist dann 10110000, welches dann vom Board richtig als 1011
  * gesendet wird.
  *
  * @param  drv  Eine Referenz des Boards
  * @param  num  Die jeweilige Zahl, die konvertiert werden soll
- * @return      Die Zahl konvertiert für die jeweilige PC-Nummer
+ * @return      Die Zahl konvertiert fuer die jeweilige PC-Nummer
  */
 uint8_t sendConverting(uint8_t num){
     if (PC_ID == 1)
@@ -118,15 +110,15 @@ uint8_t sendConverting(uint8_t num){
 
 /**
  * Diese Methode nutzt die gesetzte Nummer des PCs um anhand dieser
- * eine Zahl so umzuwandeln, dass die über das Board übertragene Nummer
+ * eine Zahl so umzuwandeln, dass die ueber das Board uebertragene Nummer
  * richtig benutzt wird. Die PC_ID kennzeichnet hier, wie das Registers des
- * Boards an diesem PC gesetzt wurde. Da bei einem 0xF0-Register eine Binärzahl
- * 1011 als 10110000 ankommen würde, muss diese erst durch einen Shift von 4
- * Bits nach rechts in Ihre ursprüngliche Zahl konvertiert werden.
+ * Boards an diesem PC gesetzt wurde. Da bei einem 0xF0-Register eine Binaerzahl
+ * 1011 als 10110000 ankommen wuerde, muss diese erst durch einen Shift von 4
+ * Bits nach rechts in Ihre urspruengliche Zahl konvertiert werden.
  *
  * @param  drv  Eine Referenz des Boards
  * @param  num  Die jeweilige Zahl, die konvertiert werden soll
- * @return      Die Zahl konvertiert für die jeweilige PC-Nummer
+ * @return      Die Zahl konvertiert fuer die jeweilige PC-Nummer
  */
 uint8_t reveiceConverting(uint8_t num){
     if (PC_ID == 0) // 0x0F
@@ -136,14 +128,6 @@ uint8_t reveiceConverting(uint8_t num){
 
 void sending(B15F &drv, vector<vector<uint8_t>> sentenceVector){
     setParity(sentenceVector);
-    //Fehler
-    //vector<uint8_t> fehlervector;
-    //fehlervector.push_back(0b001);
-    //fehlervector.push_back(0b001);
-    //fehlervector.push_back(0b001);
-    //sentenceVector.push_back(fehlervector);
-    //printSentenceVector(sentenceVector);
-    //Fehler 
     
     for (unsigned int i = 0; i < sentenceVector.size(); i++){ //Satz beginnt
         drv.setRegister(&PORTA, sendConverting(START_SIGN)); // Startzeichen senden
@@ -164,11 +148,11 @@ void sending(B15F &drv, vector<vector<uint8_t>> sentenceVector){
                 drv.delay_ms(SENDING_CYCLE_TIME_MS);
         }
         if(reveiceConverting(drv.getRegister(&PINA)) == DEN_SIGN){
-            cout << "==== Übertragung fehlgeschlagen ====" << endl;
+            cout << "==== Uebertragung fehlgeschlagen ====" << endl;
             i -= 1;
         }
         else if(reveiceConverting(drv.getRegister(&PINA)) == ACK_SIGN)
-            cout << "==== Übertragung erfolgreich ====" << endl;
+            cout << "==== Uebertragung erfolgreich ====" << endl;
     }
     drv.setRegister(&PORTA,sendConverting(STOP_SIGN)); // Stopzeichen senden (Uebertragung beendet)
     cout << "[sending]: STOP_SIGN gesendet" << endl;
@@ -178,10 +162,9 @@ vector<vector<uint8_t>> receiving(B15F &drv){
     vector<vector<uint8_t>> sentenceVector;
     uint8_t lastBitset;
     uint8_t currentBitset;
-
+    auto start = std::chrono::system_clock::now();
     while(reveiceConverting(drv.getRegister(&PINA)) != STOP_SIGN)
     {
-        //cout << "[receiving]: Kein START_SIGN empfangen" << endl;
         currentBitset = reveiceConverting(drv.getRegister(&PINA));
         if(currentBitset == START_SIGN)
         {
@@ -221,6 +204,10 @@ vector<vector<uint8_t>> receiving(B15F &drv){
         drv.delay_ms(RECEIVING_CYCLE_TIME_MS);
     }
     cout << "[receiving]: STOP_SIGN empfangen" << endl;
+    auto end = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsed_seconds = end-start;
+    std::cout << "[receiving]: Elapsed time: " << elapsed_seconds.count() << "s" << std::endl;
+    drv.setRegister(&PORTA, sendConverting(0));
     return sentenceVector;
 }
 
@@ -265,7 +252,7 @@ bool isEven(int num){
 
 bool checkParity(vector<uint8_t> binaryVector){
     uint8_t parity = (binaryVector.at(2) >> 2);
-    removeParity(binaryVector); //Parität löschen
+    removeParity(binaryVector); //Paritaet löschen
     int count = 0;
     for(unsigned int i = 0; i < binaryVector.size(); i++)
         count += countOnes(binaryVector.at(i));
@@ -279,6 +266,8 @@ void removeParity(vector<uint8_t> &binaryVector){
 }
 
 void leitungstest(B15F &drv){
+    cin.clear();
+    //cin.ignore(numeric_limits<streamsize>::max(), '\n');
     if(PC_ID == 0){
         drv.setRegister(&PORTA, sendConverting(0b0101));
         cout << "[System]: Output gesetzt ("<< bitset<8>(drv.getRegister(&PINA)) <<")\nLeitung testen? (Enter)";
@@ -287,7 +276,7 @@ void leitungstest(B15F &drv){
         if(reveiceConverting(drv.getRegister(&PINA)) == 0b1010)
             cout << "[System]: PC-0 - Leitung korrekt" << endl;
         else
-            cout << "[FEHLER]: PC-0 - Fehler in der Leitung\n[FEHLER]: Soll-Wert: 1010\n[FEHLER]: Ist-Wert = "
+            cout << "[FEHLER]: PC-1 - Fehler in der Leitung\n[FEHLER]: Soll-Wert: 1010\n[FEHLER]: Ist-Wert = "
             << bitset<4>(reveiceConverting(drv.getRegister(&PINA))) << endl;
     }
     else{
@@ -304,7 +293,7 @@ void leitungstest(B15F &drv){
     drv.delay_ms(1000);
     cout << "[System]: Leitung: " << bitset<8>(drv.getRegister(&PINA)) << endl;
     drv.delay_ms(500);
-    cout << "[System]: Leitung zurückgesetzen (Enter)" << endl;
+    cout << "[System]: Leitung zurueckgesetzen (Enter)" << endl;
 
     cin.ignore();
     drv.setRegister(&PORTA, sendConverting(0));
@@ -320,10 +309,8 @@ void printSentenceVector(vector<vector<uint8_t>> sentenceVector){
 }
 
 void printBinaryVectorToChar(vector<uint8_t> vector){
-    cout << "Vector: ";
     for(unsigned int i = 0; i < vector.size(); i++)
-        cout << (char)vector.at(i);
-    cout << endl;
+        cout << vector.at(i);
 }
 
 uint8_t mergeBitsets(vector<uint8_t> binaryVector){
@@ -331,4 +318,21 @@ uint8_t mergeBitsets(vector<uint8_t> binaryVector){
     for (unsigned int i = 0; i < binaryVector.size(); i++)
         mergedNum |= (binaryVector.at(i) << (i * 3));
     return mergedNum;
+}
+
+bool sendRequest(B15F &drv){
+    drv.setRegister(&PORTA,sendConverting(REQ_SIGN));
+    for(int i = 0; i < 20; i++){
+        //cout << "ACK: " << bitset<4>(reveiceConverting(drv.getRegister(&PINA))) << endl;
+        if(reveiceConverting(drv.getRegister(&PINA)) == ACK_SIGN){
+            cout << "[Comm]: >>Uebertragung akzeptiert<<" << endl;
+            return true;
+        }
+        else{
+            cout << "[Comm]: Waiting for Acknowledge..." << endl;
+        }
+        drv.delay_ms(500);
+    }
+    cout << "[Comm]: Error - Request Timout" << endl;
+    return false;
 }
