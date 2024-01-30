@@ -25,13 +25,11 @@ int main(){
     auto current = std::chrono::system_clock::now();
     std::time_t currentTime = std::chrono::system_clock::to_time_t(current);
     
-    outputFile << ctime(&currentTime) << endl;
-
     if(!isatty(fileno(stdin))){
         PC_ID = 0;
         cout << "[System]: PC-ID = " << PC_ID << endl;
         drv.setRegister(&DDRA, 0x0F);
-        
+        outputFile << ctime(&currentTime) << endl;
         //leitungstest(drv);
         string inputString;
         string line;
