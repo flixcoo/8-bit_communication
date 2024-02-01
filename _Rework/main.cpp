@@ -86,9 +86,9 @@ int main(){
  * @return      Die Zahl konvertiert fuer die jeweilige PC-Nummer
  */
 uint8_t sendConverting(uint8_t num){
-    if (PC_ID == 1)
+    if (PC_ID == 1) // 0xF0 - PC-1
         return (num << 4);
-    return num;
+    return num; // 0x0F - PC-0
 }
 
 /**
@@ -104,9 +104,9 @@ uint8_t sendConverting(uint8_t num){
  * @return      Die Zahl konvertiert fuer die jeweilige PC-Nummer
  */
 uint8_t reveiceConverting(uint8_t num){
-    if (PC_ID == 0) // 0x0F
+    if (PC_ID == 0) // 0x0F - PC-0
         return (num >> 4);
-    return (num & 0x0F); // 0xF0
+    return (num & 0x0F); // 0xF0 - PC-1
 }
 
 /**
