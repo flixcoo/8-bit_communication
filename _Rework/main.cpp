@@ -73,30 +73,7 @@ int main(){
     }
 }
 
-//Funktioniert nur wenn Leitung am Anfang auf 0
-void assignPC(B15F &drv){
-    uint8_t initialSignal = drv.getRegister(&PINA);
-    cerr << "initialSignal: " << bitset<8>(initialSignal) << endl;
-    
-    drv.setRegister(&DDRA, 0xFF);
-    cerr << "[System]: Leitung = " << bitset<8>(drv.getRegister(&PINA)) << endl;
-    if (initialSignal == 0){
-        PC_ID = 0;
-        drv.setRegister(&DDRA, 0x0F);
-        drv.setRegister(&PORTA, 1);
-        cerr << "[System]: Leitung auf 1 = " << bitset<8>(drv.getRegister(&PINA)) << endl;
-    }
-    else{
-        drv.setRegister(&DDRA, 0xF0);
-        drv.setRegister(&PORTA, 0);
-        PC_ID = 1;
-    }
-    cerr << "[System]: Leitung nach Register= " << bitset<8>(drv.getRegister(&PINA)) << endl;
-    cerr << "[System]: PC auf PC-" << PC_ID << " gesetzt." << endl;
-}
-
 /**
- * 
  * Diese Methode nutzt die gesetzte Nummer des PCs um anhand dieser
  * eine Zahl so umzuwandeln, dass diese richtig ueber das Board gesendet
  * wird. Die PC_ID kennzeichnet hier, wie das Registers des Boards an diesem
@@ -106,7 +83,7 @@ void assignPC(B15F &drv){
  * Das Ergebnis ist dann 10110000, welches dann vom Board richtig als 1011
  * gesendet wird.
  *
- * @param  drv  Eine Referenz des Boards
+ * @param  drv  Ein Objekt als Referenz auf eine Instanz des B15-Boards.
  * @param  num  Die jeweilige Zahl, die konvertiert werden soll
  * @return      Die Zahl konvertiert fuer die jeweilige PC-Nummer
  */
@@ -124,7 +101,7 @@ uint8_t sendConverting(uint8_t num){
  * 1011 als 10110000 ankommen wuerde, muss diese erst durch einen Shift von 4
  * Bits nach rechts in Ihre urspruengliche Zahl konvertiert werden.
  *
- * @param  drv  Eine Referenz des Boards
+ * @param  drv  Ein Objekt als Referenz auf eine Instanz des B15-Boards.
  * @param  num  Die jeweilige Zahl, die konvertiert werden soll
  * @return      Die Zahl konvertiert fuer die jeweilige PC-Nummer
  */
@@ -134,6 +111,22 @@ uint8_t reveiceConverting(uint8_t num){
     return (num & 0x0F); // 0xF0
 }
 
+/**
+ * Diese Methode dient dem Senden einer Zeichenkette ueber eine 8-Bit leitung.
+ * Hierzu wird ein Satzvektor uebergeben. Diesem wird zuerst die Paritaet
+ * gesetzt. Danach wird jedes Zeichen, welches aus drei Paketen besteht,
+ * mit einem vorangegangene Startzeichen gesendet. Sollte das naechste zusendende
+ * Zeichen das gleiche sein, wie das vorher gesendete Zeichen, so wird dazwischen
+ * ein SAME_SIGN gesendet. Nachdem drei Pakete uebertragen wurden, wird
+ * die Leitung auf ein ACK_SIGN oder DEN_SIGN ueberprueft. Bei einem Deny
+ * wird im Satzvektor ein Zeichen zurueckgesprungen, so dass das fehlgeschlagene Zeichen
+ * erneut gesendet wird. Sobald durch den Satzvektor vollstaendig iteriert wurde,
+ * wird ein STOP_SIGN gesendet.
+ *
+ * @param  drv             Ein Objekt als Referenz auf eine Instanz des B15-Boards.
+ * @param  sentenceVector  Ein Satzvektor, welcher gesendet werden soll.
+ * @return                 Kein Rueckgabewert, nur Konsolenoutput.
+ */
 void sending(B15F &drv, vector<vector<uint8_t>> sentenceVector){
     setParity(sentenceVector);
     
@@ -166,6 +159,22 @@ void sending(B15F &drv, vector<vector<uint8_t>> sentenceVector){
     cerr << "[sending]: STOP_SIGN gesendet" << endl;
 }
 
+/**
+ * Diese Funktion dient dem Empfangen einer Zeichenkette ueber eine 8-Bit Leitung.
+ * Hierzu wird werden am Anfang u.a. die Rueckgabevariable sentenceVector erstellt.
+ * Solange kein STOP_SIGN empfangen wird, wird auf ein START_SIGN gewartet. Sobald dieses kommt,
+ * wird immer das currentBitset und das lastBitset genutzt, um eine Aenderung an
+ * der Leitung festzustellen. Auch wird nach dem Steuerzeichen SAME_SIGN untersucht,
+ * um moegliche doppelte Zeichen festzustellen. Dies wird wiederholt, bis drei Pakete
+ * empfangen wurden. Nach drei Paketen wird die Paritaet der empfangenen Pakete geprueft.
+ * Sollte diese Richtig sein, wird an den Sender ein Acknowledge (ACK_SIGN) gesendet,
+ * die Paritaet entfernt und das neue Zeichen in den Satzvektor integriert.
+ * Sollte die Paritaet falsch sein, so wird ein Deny (DEN_SIGN) gesendet.
+ * Das Zeichen wird nicht in den Satzvektor uebernommen.
+ * 
+ * @param drv  Ein Objekt als Referenz auf eine Instanz des B15-Boards.
+ * @return     Ein Satzvektor, welche die Empfangenen Zeichen enthaelt.
+*/
 vector<vector<uint8_t>> receiving(B15F &drv){
     vector<vector<uint8_t>> sentenceVector;
     uint8_t lastBitset;
@@ -221,16 +230,16 @@ vector<vector<uint8_t>> receiving(B15F &drv){
 }
 
 /**
-* Erstellt aus einer Binärzahl einen Vektor in welchem die Binärzahl in 3-Bit-Blöcle zerteilt wird.
-* An jedem Index (0,1,2) befindet sich eine uint8_t (8 Bit Binearzahl),
-* welche auf den ersten drei Bits einen Teil der eingegebenen Binärzahl
-* enthält. An Index 0 befinden sich die Bit 0 - 2, an Index 1 die Bits 3 - 5
-* und an Index 2 die Bits 6 + 7. Dies wird im späteren Verlauf genutzt um die
-* maxmimal 3 Bit großen Zahlen als Paket ueber die 4 Leitungen zu senden.
-*
-* @param  num  Eine 8-Bit Binaerzahl, welche Zerteilt werden soll.
-* @return      Einen Vektor der Groeße 3 welcher die Teilbitsets enthaelt
-*/
+ * Erstellt aus einer Binärzahl einen Vektor in welchem die Binärzahl in 3-Bit-Blöcle zerteilt wird.
+ *  An jedem Index (0,1,2) befindet sich eine uint8_t (8 Bit Binearzahl),
+ * welche auf den ersten drei Bits einen Teil der eingegebenen Binärzahl
+ * enthält. An Index 0 befinden sich die Bit 0 - 2, an Index 1 die Bits 3 - 5
+ * und an Index 2 die Bits 6 + 7. Dies wird im späteren Verlauf genutzt um die
+ * maxmimal 3 Bit großen Zahlen als Paket ueber die 4 Leitungen zu senden.
+ * 
+ * @param  num  Eine 8-Bit Binaerzahl, welche Zerteilt werden soll.
+ * @return      Einen Vektor der Groeße 3 welcher die Teilbitsets enthaelt
+ */
 vector<uint8_t> createBinaryVector(uint8_t num){
     vector<uint8_t> binaryVector;
     for (long unsigned int i = 0; i < 3; i++)
@@ -239,17 +248,17 @@ vector<uint8_t> createBinaryVector(uint8_t num){
 }
 
 /**
-* Erstellt aus einem String einen Vektor welcher Binaervektor mit Teilbits enthaelt.
-* Jedes Zeichen aus dem String s wird wird durch createBinaryVector()
-* in maximal drei Bit große Bitsets zerteilt und danach angehaengt an den
-* sentenceVector, welcher somit ein Vektor ist, welcher Vektoren enthaelt,
-* welche Teilbitsets der Zeichen vom String s enthalten.
-* Diese Funktion dient spaeter zum einfacheren iterieren durch die
-* einzelnen Zeichen.
-*
-* @param s  Eine Zeichenkette, welche zerlegt werden soll.
-* @return   Einen Vektor welcher einen Vektor mit Teilbitsets der zeichen von s enthaelt.
-*/
+ * Erstellt aus einem String einen Vektor welcher Binaervektor mit Teilbits enthaelt.
+ * Jedes Zeichen aus dem String s wird wird durch createBinaryVector()
+ * in maximal drei Bit große Bitsets zerteilt und danach angehaengt an den
+ * sentenceVector, welcher somit ein Vektor ist, welcher Vektoren enthaelt,
+ * welche Teilbitsets der Zeichen vom String s enthalten.
+ * Diese Funktion dient spaeter zum einfacheren iterieren durch die
+ * einzelnen Zeichen.
+ * 
+ * @param s  Eine Zeichenkette, welche zerlegt werden soll.
+ * @return   Einen Vektor welcher einen Vektor mit Teilbitsets der zeichen von s enthaelt.
+ */
 vector<vector<uint8_t>> createSentenceVector(const string s){
     vector<vector<uint8_t>> sentenceVector;
     for (unsigned int i = 0; i < s.length(); i++)
@@ -258,16 +267,16 @@ vector<vector<uint8_t>> createSentenceVector(const string s){
 }
 
 /**
-* Setzt die korrekte Paritaet fuer jedes Zeichen im sentenceVector.
-* Dafuer wird durch den sentenceVector iteriert, und von jedem Teilbitvector
-* das Vorkommen des Bits '1' gezaehlt. Wenn diese Anzahl ungerade ist, wird
-* am auf dem "9. Bit" eine Paritaet von 1 gesetzt, andernfalls 0.
-* Der sentenceVector wird als Referenz in die Methode gegeben,
-* weshalb kein Rueckggabewert notwendig ist.
-*
-* @param sentenceVector Ein Satzvektor, dessen Paritaet gesetzt werden soll. 
-* @return               Keine Rueckgabe, da mit einer Referenz gearbeitet wird.
-*/
+ * Setzt die korrekte Paritaet fuer jedes Zeichen im sentenceVector.
+ * Dafuer wird durch den sentenceVector iteriert, und von jedem Teilbitvector
+ * das Vorkommen des Bits '1' gezaehlt. Wenn diese Anzahl ungerade ist, wird
+ * auf dem "9. Bit" eine Paritaet von 1 gesetzt, andernfalls 0.
+ * Der sentenceVector wird als Referenz in die Methode gegeben,
+ * weshalb kein Rueckggabewert notwendig ist.
+ * 
+ * @param sentenceVector Ein Satzvektor, dessen Paritaet gesetzt werden soll. 
+ * @return               Keine Rueckgabe, da mit einer Referenz gearbeitet wird.
+ */
 void setParity(vector<vector<uint8_t>> &sentenceVector){
     for (unsigned int i = 0; i < sentenceVector.size(); i++){
         int count = 0;
@@ -279,16 +288,16 @@ void setParity(vector<vector<uint8_t>> &sentenceVector){
 }
 
 /**
-* Zaehlt die Vorkommen des Bits '1' in einem einer 8 Bit Binaerzahl. 
-* Hierzu wird die Binaerzahl mit 00000001 verundet. Die uebrig gebliebene
-* Zahl wird auf die 'count'-Variable aufaddiert, d.h. im Falle einer '1'
-* wird der Count erhoeht, ansonnsten bleibt er gleich. Die Binaerzahl wird dann
-* um einen Bit nach rechts geshifted, so dass das naechste Bit an Position 0 ist.
-* Dies wird solange gemacht, wie die Binaerzahl Einsen enthaelt.
-*
-* @param num    Eine 8-Bit Binaerzahl.
-* @return       Die Anzahl der Bits welche '1' sind
-*/
+ * Zaehlt die Vorkommen des Bits '1' in einem einer 8 Bit Binaerzahl. 
+ * Hierzu wird die Binaerzahl mit 00000001 verundet. Die uebrig gebliebene
+ * Zahl wird auf die 'count'-Variable aufaddiert, d.h. im Falle einer '1'
+ * wird der Count erhoeht, ansonnsten bleibt er gleich. Die Binaerzahl wird dann
+ * um einen Bit nach rechts geshifted, so dass das naechste Bit an Position 0 ist.
+ * Dies wird solange gemacht, wie die Binaerzahl Einsen enthaelt.
+ * 
+ * @param num    Eine 8-Bit Binaerzahl.
+ * @return       Die Anzahl der Bits welche '1' sind
+ */
 int countOnes(uint8_t num){
     int count = 0;
     while (num){
@@ -299,30 +308,30 @@ int countOnes(uint8_t num){
 }
 
 /**
-* Zeigt, ob eine Zahl gerade ist.
-* Die eingegebene Zahl wird durch zwei geteilt.
-* Wenn der Rest null ist, geht die Gleichung im Return-Statement
-* auf und es wird true zurueckgegeben. Wenn es einen
-* Rest gibt, wird die Gleichung falsch und es wird
-* false zurueckgegeben.
-*
-* @param num    Eine 8-Bit Binaerzahl.
-* @return       Wahrheitswert, ob die Zahl gerade ist.
-*/
+ * Zeigt, ob eine Zahl gerade ist.
+ * Die eingegebene Zahl wird durch zwei geteilt.
+ * Wenn der Rest null ist, geht die Gleichung im Return-Statement
+ * auf und es wird true zurueckgegeben. Wenn es einen
+ * Rest gibt, wird die Gleichung falsch und es wird
+ * false zurueckgegeben.
+ * 
+ * @param num    Eine 8-Bit Binaerzahl.
+ * @return       Wahrheitswert, ob die Zahl gerade ist.
+ */
 bool isEven(int num){
     return num % 2 == 0;
 }
 
 /**
-* Untersucht, ob die Paritaet einer Binaerzahl korrekt ist.
-* Hierzu wird die Paritaet seperat gespeichert, danach wird
-* sie vom geloesch und es werden die Anzahl der Bits mit '1'
-* gezaehlt. Wenn die Anzahl der '1' gerade bzw. ungerade ist und die Paritaet
-* auch 0 bzw. 1 ist, wird true zurueckgegeben, andernfalls false.
-*
-* @param binaryVector   Ein Vektor mit drei Paketen einer Binaerzahl und gesetzem Paritaetsbit.
-* @return               Wahrheitswert, ob die Paritaet stimmt.
-*/
+ * Untersucht, ob die Paritaet einer Binaerzahl korrekt ist.
+ * Hierzu wird die Paritaet seperat gespeichert, danach wird
+ * sie vom geloesch und es werden die Anzahl der Bits mit '1'
+ * gezaehlt. Wenn die Anzahl der '1' gerade bzw. ungerade ist und die Paritaet
+ * auch 0 bzw. 1 ist, wird true zurueckgegeben, andernfalls false
+ * 
+ * @param binaryVector   Ein Vektor mit drei Paketen einer Binaerzahl und gesetzem Paritaetsbit.
+ * @return               Wahrheitswert, ob die Paritaet stimmt.
+ */
 bool checkParity(vector<uint8_t> binaryVector){
     uint8_t parity = (binaryVector.at(2) >> 2);
     removeParity(binaryVector); 
@@ -335,20 +344,30 @@ bool checkParity(vector<uint8_t> binaryVector){
 }
 
 /**
-* Untersucht, ob die Paritaet einer Binaerzahl korrekt ist.
-* Hierzu wird die Paritaet seperat gespeichert, danach wird
-* sie vom geloesch und es werden die Anzahl der Bits mit '1'
-* gezaehlt. Wenn die Anzahl der '1' gerade bzw. ungerade ist und die Paritaet
-* auch 0 bzw. 1 ist, wird true zurueckgegeben, andernfalls false.
-*
-* @param binaryVector   Ein Vektor mit drei Paketen einer Binaerzahl und gesetzem Paritaetsbit.
-* @return               Wahrheitswert, ob die Paritaet stimmt.
+ * Untersucht, ob die Paritaet einer Binaerzahl korrekt ist.
+ * Hierzu wird die Paritaet seperat gespeichert, danach wird
+ * sie vom geloesch und es werden die Anzahl der Bits mit '1'
+ * gezaehlt. Wenn die Anzahl der '1' gerade bzw. ungerade ist und die Paritaet
+ * auch 0 bzw. 1 ist, wird true zurueckgegeben, andernfalls false.
+ * 
+ * @param binaryVector   Ein Vektor mit drei Paketen einer Binaerzahl und gesetzem Paritaetsbit.
+ * @return               Wahrheitswert, ob die Paritaet stimmt.
 */
 void removeParity(vector<uint8_t> &binaryVector){
     binaryVector.at(2) &= 0b011;
 }
 
-
+/**
+ * Debug-Methode zum Testen der Leitungen.
+ * Von Beiden Boards aus wird die Leitung auf einen festen Wert gesetzt und dieser
+ * Wert wird vom jeweils anderen Board abgefragt. Wenn das richtige Zeichen empfangen
+ * wurde, wird dies in der Konsole bestaetigt. Wenn das falsche Zeichen empfangen wurde,
+ * wird neben einem Hinweis auch Ist- und Soll-Wert der Leitung ausgegeben.
+ * Nach dem Test wird die Leitung von beiden Boards wieder auf 0 gesetzt.
+ * 
+ * @param drv  Ein Objekt als Referenz auf eine Instanz des B15-Boards.
+ * @return     Keine Rueckggabe, nur Konsolenausgaben.
+ */
 void leitungstest(B15F &drv){
     cin.clear();
     if(PC_ID == 0){
@@ -383,13 +402,13 @@ void leitungstest(B15F &drv){
 }
 
 /**
-* Gibt den sentenceVector in der Konsole aus.
-* Diese Funktion ist zu Debug-Zwecken und gibt den sentenceVector
-* in einer uebersichtlichen Formatierung aus. 
-*
-* @param sentenceVector Ein Satzvektor, welcher in der Konsole ausgegeben werden soll.
-* @return               Keine Rueckgabe, nur Konsolenoutput.
-*/
+ * Gibt den sentenceVector in der Konsole aus.
+ * Diese Funktion ist zu Debug-Zwecken und gibt den sentenceVector
+ * in einer uebersichtlichen Formatierung aus.
+ * 
+ * @param sentenceVector Ein Satzvektor, welcher in der Konsole ausgegeben werden soll.
+ * @return               Keine Rueckgabe, nur Konsolenoutput.
+ */
 void printSentenceVector(vector<vector<uint8_t>> sentenceVector){
     for (unsigned int i = 0; i < sentenceVector.size(); i++){
         cerr << "i:0     1     2" << endl;
@@ -400,15 +419,15 @@ void printSentenceVector(vector<vector<uint8_t>> sentenceVector){
 }
 
 /**
-* Fuegt die Pakete einer Binaerzahl wieder zu einer Binaerzahl zusammen.
-* Hierzu wird durch den Vektor iteriert, in welchem sich die Pakete
-* befinden. Dies werden dann mit einem Shift von 0, 3 oder 6 auf eine
-* neue 8-Bit Binaerzahl projeziert. Diese zusammengesetzte Binaerzahl wird
-* am Ende zurueckgegbene.
-*
-* @param binaryVector   Ein Vektor mit den Teilpaketen, welche wieder zusammengefuegt werden sollen.
-* @return               Die zusammengefuegte 8-Bit Binaerzahl.
-*/
+ * Fuegt die Pakete einer Binaerzahl wieder zu einer Binaerzahl zusammen.
+ * Hierzu wird durch den Vektor iteriert, in welchem sich die Pakete
+ * befinden. Dies werden dann mit einem Shift von 0, 3 oder 6 auf eine
+ * neue 8-Bit Binaerzahl projeziert. Diese zusammengesetzte Binaerzahl wird
+ * am Ende zurueckgegbene.
+ * 
+ * @param binaryVector   Ein Vektor mit den Teilpaketen, welche wieder zusammengefuegt werden sollen.
+ * @return               Die zusammengefuegte 8-Bit Binaerzahl
+ */
 uint8_t mergeBitsets(vector<uint8_t> binaryVector){
     uint8_t mergedNum = 0b00000000;
     for (unsigned int i = 0; i < binaryVector.size(); i++)
@@ -417,16 +436,16 @@ uint8_t mergeBitsets(vector<uint8_t> binaryVector){
 }
 
 /**
-* Sendet eine Anfrage an den anderen PC, ob eine Uebertragung gestartet werden kann.
-* Hierzu wird die Konstante REQ_SIGN an das andere Board gesendet und auf eine
-* Antwort gewartet. Insgesamt wird 40-mal 500ms gewartet bis die Anfrage ins
-* Timeout geht. Wenn während dieses Zeitraums der andere PC eine Bestaetigung
-* in Form eines ACK_SIGN sendet. Wird wahr zurueckgegeben, ansonsten wird am 
-* Ende der 40 Versuche ein false zurueckgegeben.
-*
-* @param drv    Ein Objekt als Referenz auf eine Instanz des B15-Boards.
-* @return       Wahrheitswert, ob die Anfrage bestaetigt oder abgelehnt wurde.
-*/
+ * Sendet eine Anfrage an den anderen PC, ob eine Uebertragung gestartet werden kann.
+ * Hierzu wird die Konstante REQ_SIGN an das andere Board gesendet und auf eine
+ * Antwort gewartet. Insgesamt wird 40-mal 500ms gewartet bis die Anfrage ins
+ * Timeout geht. Wenn während dieses Zeitraums der andere PC eine Bestaetigung
+ * in Form eines ACK_SIGN sendet. Wird wahr zurueckgegeben, ansonsten wird am 
+ * Ende der 40 Versuche ein false zurueckgegeben.
+ * 
+ * @param drv    Ein Objekt als Referenz auf eine Instanz des B15-Boards.
+ * @return       Wahrheitswert, ob die Anfrage bestaetigt oder abgelehnt wurde.
+ */
 bool sendRequest(B15F &drv){
     drv.setRegister(&PORTA,sendConverting(REQ_SIGN));
     for(int i = 0; i < 40; i++){
