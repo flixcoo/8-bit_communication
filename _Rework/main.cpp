@@ -10,10 +10,10 @@
 * WICHTIG: Um einen optimalen Ablauf zu gewaehrleisten, sollten am Anfang
 *          beide Leitungen auf 0 gesetzt sein (Labornetzteil einmal an und wieder aus machen).
 * 
-* INFO: Standardmäßig wird am Ende die Zeichenkette in der Konsole ausgegeben.
+* INFO: Standardmaeßig wird am Ende die Zeichenkette in der Konsole ausgegeben.
 *       Um diese in eine Datei zu bekommen, fuehre auf dem Empfangs-PC der Befehl
 *       vollgendermaßen aussehen: ./main.elf > output.txt (Name frei waehlbar).
-*       Alle Konsolenausgaben im Programm laufen über std::cerr, nur die Ausgabe
+*       Alle Konsolenausgaben im Programm laufen ueber std::cerr, nur die Ausgabe
 *       der Zeichenkette laeuft ueber std::cout.
 * 
 * =====[ Instructions ]===== */
@@ -77,7 +77,7 @@ int main(){
  * wird. Die PC_ID kennzeichnet hier, wie das Registers des Boards an diesem
  * PC gesetzt wurde. Da bei einem 0xF0-Register eine Binaerzahl 1011 nicht
  * gesendet werden wuerde, da die ersten 4 Bits nicht zum senden verwendet werden
- * können, muss in diesem Fall die Zahl um 4 Bits nach links geshifted werden.
+ * koennen, muss in diesem Fall die Zahl um 4 Bits nach links geshifted werden.
  * Das Ergebnis ist dann 10110000, welches dann vom Board richtig als 1011
  * gesendet wird.
  *
@@ -228,11 +228,11 @@ vector<vector<uint8_t>> receiving(B15F &drv){
 }
 
 /**
- * Erstellt aus einer Binärzahl einen Vektor in welchem die Binärzahl in 3-Bit-Blöcle zerteilt wird.
- *  An jedem Index (0,1,2) befindet sich eine uint8_t (8 Bit Binearzahl),
- * welche auf den ersten drei Bits einen Teil der eingegebenen Binärzahl
- * enthält. An Index 0 befinden sich die Bit 0 - 2, an Index 1 die Bits 3 - 5
- * und an Index 2 die Bits 6 + 7. Dies wird im späteren Verlauf genutzt um die
+ * Erstellt aus einer Binaerzahl einen Vektor in welchem die Binaerzahl in 3-Bit-Bloecle zerteilt wird.
+ * An jedem Index (0,1,2) befindet sich eine uint8_t (8 Bit Binearzahl),
+ * welche auf den ersten drei Bits einen Teil der eingegebenen Binaerzahl
+ * enthaelt. An Index 0 befinden sich die Bit 0 - 2, an Index 1 die Bits 3 - 5
+ * und an Index 2 die Bits 6 + 7. Dies wird im spaeteren Verlauf genutzt um die
  * maxmimal 3 Bit großen Zahlen als Paket ueber die 4 Leitungen zu senden.
  * 
  * @param  num  Eine 8-Bit Binaerzahl, welche Zerteilt werden soll.
@@ -437,7 +437,7 @@ uint8_t mergeBitsets(vector<uint8_t> binaryVector){
  * Sendet eine Anfrage an den anderen PC, ob eine Uebertragung gestartet werden kann.
  * Hierzu wird die Konstante REQ_SIGN an das andere Board gesendet und auf eine
  * Antwort gewartet. Insgesamt wird 40-mal 500ms gewartet bis die Anfrage ins
- * Timeout geht. Wenn während dieses Zeitraums der andere PC eine Bestaetigung
+ * Timeout geht. Wenn waehrend dieses Zeitraums der andere PC eine Bestaetigung
  * in Form eines ACK_SIGN sendet. Wird wahr zurueckgegeben, ansonsten wird am 
  * Ende der 40 Versuche ein false zurueckgegeben.
  * 
