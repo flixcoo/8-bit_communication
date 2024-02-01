@@ -39,30 +39,28 @@ int main(){
     bool running = true;
     vector<vector<uint8_t>> sentenceVector;
     
-    if(!isatty(fileno(stdin))){
+    if(!isatty(fileno(stdin))){ //Wenn eine Datei gepipied wurde (= PC ist Sende-PC)
         PC_ID = 0;
         cerr << "[System]: PC-ID = " << PC_ID << endl;
-        drv.setRegister(&DDRA, 0x0F);
-        string inputString;
-        string line;
-        while(getline(cin, line)){
+        drv.setRegister(&DDRA, 0x0F); //Setze Register fuer Sende-/Empfangsverhalten
+        string inputString, line;
+        while(getline(cin, line)) //Iteriere durch die komplette Input-Datei
             inputString += line;
-        }
         cerr << "[System]: Input = " << inputString << endl;
-        sentenceVector = createSentenceVector(inputString);
-        if(sendRequest(drv))
-            sending(drv, sentenceVector);
+        sentenceVector = createSentenceVector(inputString); //Erstelle Variable fuer Zeichenkette
+        if(sendRequest(drv))                //Wenn Request bestaetigt,
+            sending(drv, sentenceVector);   //Sende Zeichenkette
     }
-    else{
+    else{ //Wenn eine Datei gepipied wurde (= PC ist Empfangs-PC)
         PC_ID = 1;
         cerr << "[System]: PC-ID = " << PC_ID << endl;
-        drv.setRegister(&DDRA, 0xF0);
+        drv.setRegister(&DDRA, 0xF0); //Setze Register fuer Sende-/Empfangsverhalten
         cerr << "[Comm]: Waiting for Request..." << endl;
         while(running){
-            if(reveiceConverting(drv.getRegister(&PINA)) == REQ_SIGN){
+            if(reveiceConverting(drv.getRegister(&PINA)) == REQ_SIGN){ //Warte auf Request
             	cerr << "[Comm]: >>Uebertragung akzeptiert<<" << endl;
-                drv.setRegister(&PORTA, sendConverting(ACK_SIGN));
-                sentenceVector = receiving(drv);
+                drv.setRegister(&PORTA, sendConverting(ACK_SIGN)); //Bestaetige Request
+                sentenceVector = receiving(drv); //Empfange Zeichenkette in Variable
                 running = false;
             } 
         }
