@@ -8,7 +8,7 @@
 
 A low-level communication system implementing 8-bit parallel data transfer between two ATmega microcontrollers. Developed as part of the Hardware Practical II module at Leipzig University of Applied Sciences.
 
-## Key Features ✨
+## ✨ Key Features 
 
 - **8-Bit Parallel Protocol** with hardware-level register control
 - **Error Detection** through parity bit verification
@@ -17,7 +17,7 @@ A low-level communication system implementing 8-bit parallel data transfer betwe
 - **Collision Avoidance** through `SAME_SIGN`  repetition detection
 - **Timeout Handling** with configurable retry intervals
 
-## Hardware Requirements 🖥️
+## 🖥️ Hardware Requirements 
 
 | Component          | Specification                          |
 |--------------------|----------------------------------------|
@@ -26,7 +26,7 @@ A low-level communication system implementing 8-bit parallel data transfer betwe
 | Development Board  | B15F-compatible interface              |
 | Power Supply       | Lab-grade 5V DC source                 |
 
-## Communication Protocol 📡
+## 📡 Communication Protocol 
 
 ### Flowchart
 
@@ -73,7 +73,7 @@ A low-level communication system implementing 8-bit parallel data transfer betwe
 | DEN_SIG | 0x09 | Denial - Parity is incorrect | 
 | STOP_SIGN | 0x0F | End transmission | 
 
-## Technical Implementation 🔧
+## 🔧 Technical Implementation 
 
 ### Data Packaging
 
