@@ -12,9 +12,9 @@ A low-level communication system implementing 8-bit parallel data transfer betwe
 
 - **8-Bit Parallel Protocol** with hardware-level register control
 - **Error Detection** through parity bit verification
-- **Flow Control** using ACK/NACK handshaking
-- **Data Framing** with START/STOP sequence markers
-- **Collision Avoidance** through SAME_SIGN repetition detection
+- **Flow Control** using `ACK`/`DEN` handshaking
+- **Data Framing** with `START`/`STOP` sequence markers
+- **Collision Avoidance** through `SAME_SIGN`  repetition detection
 - **Timeout Handling** with configurable retry intervals
 
 ## Hardware Requirements 🖥️
