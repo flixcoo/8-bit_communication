@@ -36,29 +36,29 @@ A low-level communication system implementing 8-bit parallel data transfer betwe
 ### Example Sequence
 
 ```plaintext
-[Sender]                            [Receiver]
+[Sender]                          [Receiver]
+   |                                   |
+   |───START_SIGN (0x08)──────────────>|
+   |                                   |
+   |───CHAR 1 - PACKET 1──────────────>| 
+   |───CHAR 1 - PACKET 2──────────────>| 
+   |───CHAR 1 - PACKET 3──────────────>| ✓ Parity correct
+   |                                   |
+   |<───────────────ACK (0x0B)─────────| ✓ 
+   |                                   |
+   |───CHAR 2 - PACKET 1──────────────>|
+   |───CHAR 2 - PACKET 2──────────────>|
+   |───CHAR 2 - PACKET 3--─-─-─-─-─-─->| ✗ Error in parity
    |                                     |
-   |───START_SIGN (0x08)────────────────>|
-   |                                     |
-   |───CHAR 1 - PACKET 1────────────────>| 
-   |───CHAR 1 - PACKET 2────────────────>| 
-   |───CHAR 1 - PACKET 3 (Parity OK)────>| 
-   |                                     |
-   |<───────────────ACK (0x0B)───────────| 
-   |                                     |
-   |───CHAR 2 - PACKET 1────────────────>|
-   |───CHAR 2 - PACKET 2────────────────>|
-   |───CHAR 2 - PACKET 3 (Parity Wrong)─>| ✗
-   |                                     |
-   |<───────────────DEN (0x09)───────────| ✗ Paritätsfehler
-   |                                     |
-   |───CHAR 2 - PACKET 1 [RETRY]────────>| 
-   |───CHAR 2 - PACKET 2 [RETRY]────────>|
-   |───CHAR 2 - PACKET 3 [FIXED]────────>| ✓
-   |                                     |
-   |<───────────────ACK (0x0B)───────────| ✓
-   |                                     |
-   |───STOP_SIGN (0x0F)─────────────────>|
+   |<───────────────DEN (0x09)─────────| ✗ 
+   |                                   |
+   |───CHAR 2 - PACKET 1 [RETRY]──────>| 
+   |───CHAR 2 - PACKET 2 [RETRY]──────>|
+   |───CHAR 2 - PACKET 3 [FIXED]──────>| ✓ Parity correct
+   |                                   |
+   |<───────────────ACK (0x0B)─────────| ✓
+   |                                   |
+   |───STOP_SIGN (0x0F)───────────────>|
 
 ```
 
