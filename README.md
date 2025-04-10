@@ -49,7 +49,7 @@ A low-level communication system implementing 8-bit parallel data transfer betwe
    |───CHAR 2 - PACKET 1──────────────>|
    |───CHAR 2 - PACKET 2──────────────>|
    |───CHAR 2 - PACKET 3--─-─-─-─-─-─->| ✗ Error in parity
-   |                                     |
+   |                                   |
    |<───────────────DEN (0x09)─────────| ✗ 
    |                                   |
    |───CHAR 2 - PACKET 1 [RETRY]──────>| 
