@@ -30,8 +30,56 @@ A low-level communication system implementing 8-bit parallel data transfer betwe
 
 ### Flowchart
 
-`//todo`
+#### Sending-PC 
 
+```mermaid
+flowchart TD
+    Y(START) --> A
+    A(WHILE: not received STOP_SIGN) --> |true| B{IF: received START_SIGN}
+    A --> |false|X(STOP)
+    B --> |true|Z(lastBitset = START_SIGN)
+    Z --> C(WHILE: less then 3 bitsets received)
+    C --> |false|D{lastBitset == START_SIGN}
+    D --> |true|C
+    D --> |true|E{currentBitset == lastBitset}
+    E --> |true|C
+    E --> |false|F{lastBitset == SAME_SIGN}
+    F --> |true|G(lastBitset = currentBitset)
+    G --> C
+    F --> |false|H(currentBitset gets saved)
+    H --> I(lastBitset = currentBitset)
+    I --> C
+    C --> |false|J(Check parity of received bit vector)
+    J --> K{IF: Is parity correct}
+    K -->|false|L(Send DEN_SIGN)
+    L --> B
+    K --> |true|M(Send ACK_SIGN)
+    M --> N(Remove parity from vector)
+    N --> O(Save received vector)
+    O --> A
+```
+
+#### Receiving-PC
+
+``` mermaid
+flowchart TD
+    Y(START) --> A
+    A[WHILE: Chars available for sending] -->|true| B(Send START_SIGN)
+    B --> C[WHILE: Not all Bitsets of current char have been send]
+    C --> |true| D[Send paket]
+    C --> |false| C
+    D --> E{IF: nextBitset == currentBitset}
+    E --> |true|F(Send SAME_SIGN)
+    E --> |false|C
+    F --> C
+    C --> |false|G{IF: ACK_SIGN received}
+    G --> |true| H(Choose next char for sending)
+    G --> |false| I(Choose the same char again)
+    H --> A
+    I --> A
+    A --> |false|Z(STOP)
+
+```
 
 ### Example Sequence
 
